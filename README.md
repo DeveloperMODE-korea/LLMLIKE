@@ -118,6 +118,11 @@ Claude API를 활용하여 매 턴마다 새로운 스토리와 전투가 동적
 
 📧 **연락처**: frexxx9206@naver.com
 
+## 이미지
+![LLMLIKE1](https://github.com/user-attachments/assets/380b0cd6-b2f7-4772-b737-7f4de117e170)
+![LLMLIKE2](https://github.com/user-attachments/assets/a8ef4d5a-5419-4fa7-929e-b1c6501c289c)
+
+
 ## 📄 라이선스
 
 이 프로젝트는 오픈소스로 공개되며, 초기 버전은 GitHub에서 확인할 수 있습니다.
