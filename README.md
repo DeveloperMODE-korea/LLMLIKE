@@ -52,9 +52,9 @@ Claude API를 활용하여 매 턴마다 새로운 스토리와 전투가 동적
 - [x] Git 버전 관리 및 GitHub 리포지토리 생성
 
 ### 2단계: 캐릭터 생성 시스템
-- [ ] 캐릭터 생성 UI (HTML + Tailwind CSS + TS)
-- [ ] 캐릭터 생성 API 개발 (Node.js)
-- [ ] 캐릭터 및 직업 테이블 생성 (PostgreSQL)
+- [x] 캐릭터 생성 UI (HTML + Tailwind CSS + TS)
+- [x] 캐릭터 생성 API 개발 (Node.js)
+- [x] 캐릭터 및 직업 테이블 생성 (PostgreSQL)
 - [ ] 유효성 검사 및 에러 처리
 
 ### 3단계: Claude API 연동
@@ -82,7 +82,7 @@ Claude API를 활용하여 매 턴마다 새로운 스토리와 전투가 동적
 - [ ] CI/CD 파이프라인 구축
 
 ### 7단계: 사용자 경험 개선
-- [ ] 상태 관리 라이브러리 도입 (Redux)
+- [x] 상태 관리 라이브러리 도입 (Redux)
 - [ ] 인벤토리, 아이템, 캐릭터 커스터마이징
 - [ ] UI 애니메이션 (Framer Motion)
 - [ ] AI API 캐싱 최적화 (Redis)
