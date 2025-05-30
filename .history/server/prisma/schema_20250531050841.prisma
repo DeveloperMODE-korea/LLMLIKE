@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // API 키 관리
+  claudeApiKey String?
+  
+  // 게임 데이터
+  characters Character[]
+  gameStates GameState[]
+  
+  @@map("users")
+}
+
+model Character {
+  id           String @id @default(cuid())
+  name         String
+  job          String // Job enum을 문자열로 저장
+  level        Int    @default(1)
+  health       Int
+  maxHealth    Int
+  mana         Int
+  maxMana      Int
+  strength     Int
+  intelligence Int
+  dexterity    Int
+  constitution Int
+  gold         Int    @default(0)
+  experience   Int    @default(0)
+  
+  // Relations
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     Item[]
+  skills    Skill[]
+  gameState GameState?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("characters")
+}
+
+model Item {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  type        String  // '무기' | '방어구' | '포션' | '스크롤' | '열쇠' | '기타'
+  effects     Json?   // JSON으로 effects 저장
+  value       Int
+  
+  // Relations
+  characterId String?
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("items")
+}
+
+model Skill {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  manaCost    Int
+  damage      Int?
+  healing     Int?
+  effects     Json?   // JSON으로 effects 저장
+  
+  // Relations
+  characterId String?
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  
+  @@map("skills")
+}
+
+model GameState {
+  id            String @id @default(cuid())
+  currentStage  Int    @default(0)
+  gameStatus    String // 'menu' | 'creating' | 'playing' | 'paused' | 'ended'
+  waitingForApi Boolean @default(false)
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterId String        @unique
+  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  storyEvents StoryEvent[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("game_states")
+}
+
+model StoryEvent {
+  id           String @id @default(cuid())
+  stageNumber  Int
+  content      String @db.Text
+  choices      Json   // Choice[] 배열을 JSON으로 저장
+  type         String // '이야기' | '전투' | '보물' | '상점' | '휴식'
+  enemyId      String?
+  result       String? @db.Text
+  selectedChoice Int?
+  
+  // Relations
+  gameStateId String
+  gameState   GameState @relation(fields: [gameStateId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("story_events")
+}
+
+model Enemy {
+  id          String @id @default(cuid())
+  name        String
+  level       Int
+  health      Int
+  damage      Int
+  description String @db.Text
+  loot        Json?  // Item[] 배열을 JSON으로 저장
+  gold        Int?
+  experience  Int
+  
+  @@map("enemies")
+} 
