@@ -1,8 +1,5 @@
-# Node.js 18 Slim 이미지 사용 (Alpine 대신 Debian 기반)
-FROM node:18-slim
-
-# 시스템 의존성 설치
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Node.js 18 Alpine 이미지 사용
+FROM node:18-alpine
 
 # 작업 디렉토리 설정
 WORKDIR /app

@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Character, Job, GameState, StoryEvent, Choice, Enemy } from '../types/game';
 import { JOB_DETAILS } from '../data/jobs';
 import { MOCK_STORIES, MOCK_ENEMIES } from '../data/mockStories';
-import { apiService } from '../services/apiService';
 
 export const createCharacter = (name: string, job: Job): Character => {
   const jobDetails = JOB_DETAILS[job];
@@ -27,71 +26,57 @@ export const createCharacter = (name: string, job: Job): Character => {
   };
 };
 
-// 실제 Claude API를 사용한 스토리 생성
-export const generateNextStory = async (
+// In the real implementation, this would call Claude API
+export const generateNextStory = (
   gameState: GameState, 
   choiceId?: number
 ): Promise<StoryEvent> => {
-  try {
-    // 선택한 텍스트 찾기
-    let userChoice: string | undefined;
-    if (choiceId !== undefined && gameState.currentEvent) {
-      const selectedChoice = gameState.currentEvent.choices.find(choice => choice.id === choiceId);
-      userChoice = selectedChoice?.text;
-    }
-
-    // 백엔드 API로 스토리 생성 요청
-    const response = await apiService.generateStory({
-      characterId: gameState.character.id,
-      userChoice
-    });
-
-    // 응답 데이터를 StoryEvent 형태로 변환
-    const storyEvent: StoryEvent = {
-      id: response.storyEvent.id,
-      stageNumber: response.storyEvent.stageNumber,
-      content: response.storyEvent.content,
-      choices: response.storyEvent.choices.map((choice: any) => ({
-        id: choice.id,
-        text: choice.text,
-        consequence: choice.consequence
-      })),
-      type: response.storyEvent.type,
-      enemyId: response.storyEvent.enemyId,
-      selectedChoice: response.storyEvent.selectedChoice
-    };
-
-    return storyEvent;
-    
-  } catch (error) {
-    console.error('스토리 생성 오류:', error);
-    
-    // 오류 발생 시 기본 스토리로 폴백
-    console.log('API 오류로 인해 기본 스토리를 사용합니다.');
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const currentStage = gameState.currentStage;
-        let nextEvent: StoryEvent;
+  return new Promise((resolve) => {
+    // Simulate API delay
+    setTimeout(() => {
+      const currentStage = gameState.currentStage;
+      let nextEvent: StoryEvent;
+      
+      if (currentStage === 0) {
+        // Starting the game - use the first story
+        nextEvent = { ...MOCK_STORIES[0] };
+      } else if (choiceId !== undefined) {
+        // Based on the current story and choice, get the next story
+        const currentEvent = gameState.currentEvent;
         
-        if (currentStage === 0) {
-          nextEvent = { ...MOCK_STORIES[0] };
+        if (currentEvent?.stageNumber === 1) {
+          if (choiceId === 3) {
+            // If they chose to open the door at stage 1, trigger combat
+            nextEvent = { ...MOCK_STORIES[2] }; // Combat event
+          } else if (choiceId === 1) {
+            nextEvent = { ...MOCK_STORIES[1] }; // Examine room
+          } else {
+            nextEvent = { ...MOCK_STORIES[1] }; // Check self
+          }
+        } else if (currentEvent?.type === 'combat' && currentEvent.enemyId === 'skeleton_guard') {
+          nextEvent = { ...MOCK_STORIES[3] }; // Treasure after combat
         } else {
+          // Default progression
           const nextIndex = Math.min(currentStage, MOCK_STORIES.length - 1);
           nextEvent = { ...MOCK_STORIES[nextIndex] };
         }
-        
-        nextEvent.stageNumber = currentStage + 1;
-        nextEvent.id = uuidv4();
-        
-        resolve(nextEvent);
-      }, 1000);
-    });
-  }
+      } else {
+        // Default progression
+        const nextIndex = Math.min(currentStage, MOCK_STORIES.length - 1);
+        nextEvent = { ...MOCK_STORIES[nextIndex] };
+      }
+      
+      // Ensure the event has the correct stage number
+      nextEvent.stageNumber = currentStage + 1;
+      nextEvent.id = uuidv4();
+      
+      resolve(nextEvent);
+    }, 1000);  // Simulating API delay
+  });
 };
 
 export const getEnemy = (enemyId: string): Enemy | undefined => {
-  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES] as Enemy;
+  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES];
 };
 
 export const processChoice = async (
@@ -125,7 +110,7 @@ export const processCombatAction = (
   gameState: GameState,
   choiceId: number
 ): GameState => {
-  if (!gameState.currentEvent || gameState.currentEvent.type !== '전투' || !gameState.currentEvent.enemyId) {
+  if (!gameState.currentEvent || gameState.currentEvent.type !== 'combat' || !gameState.currentEvent.enemyId) {
     return gameState;
   }
   
@@ -218,10 +203,13 @@ export const processCombatAction = (
 };
 
 export const saveGameState = (gameState: GameState): void => {
-  localStorage.setItem('llmlike-gamestate', JSON.stringify(gameState));
+  localStorage.setItem('llm_roguelike_save', JSON.stringify(gameState));
 };
 
 export const loadGameState = (): GameState | null => {
-  const saved = localStorage.getItem('llmlike-gamestate');
-  return saved ? JSON.parse(saved) : null;
+  const savedState = localStorage.getItem('llm_roguelike_save');
+  if (savedState) {
+    return JSON.parse(savedState);
+  }
+  return null;
 };

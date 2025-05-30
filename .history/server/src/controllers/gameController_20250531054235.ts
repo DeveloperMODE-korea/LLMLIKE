@@ -99,7 +99,7 @@ export const gameController = {
       });
 
       // 스토리 히스토리 변환
-      const storyHistory = character.gameState.storyEvents.map((event: any) => ({
+      const storyHistory = character.gameState.storyEvents.map(event => ({
         id: event.id,
         stageNumber: event.stageNumber,
         content: event.content,
@@ -108,7 +108,7 @@ export const gameController = {
         enemyId: event.enemyId || undefined,
         result: event.result || undefined,
         selectedChoice: event.selectedChoice || undefined
-      })) as any;
+      }));
 
       // Claude API로 스토리 생성
       const characterData: Character = {

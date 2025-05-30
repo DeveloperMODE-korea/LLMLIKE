@@ -43,7 +43,6 @@ services:
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-llmlike123}@db:5432/llmlike
       PORT: 3001
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
     ports:
       - "3001:3001"
     depends_on:

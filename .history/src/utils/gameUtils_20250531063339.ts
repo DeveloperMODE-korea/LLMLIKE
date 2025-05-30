@@ -91,7 +91,7 @@ export const generateNextStory = async (
 };
 
 export const getEnemy = (enemyId: string): Enemy | undefined => {
-  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES] as Enemy;
+  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES];
 };
 
 export const processChoice = async (
@@ -125,7 +125,7 @@ export const processCombatAction = (
   gameState: GameState,
   choiceId: number
 ): GameState => {
-  if (!gameState.currentEvent || gameState.currentEvent.type !== '전투' || !gameState.currentEvent.enemyId) {
+  if (!gameState.currentEvent || gameState.currentEvent.type !== 'combat' || !gameState.currentEvent.enemyId) {
     return gameState;
   }
   
@@ -218,10 +218,13 @@ export const processCombatAction = (
 };
 
 export const saveGameState = (gameState: GameState): void => {
-  localStorage.setItem('llmlike-gamestate', JSON.stringify(gameState));
+  localStorage.setItem('llm_roguelike_save', JSON.stringify(gameState));
 };
 
 export const loadGameState = (): GameState | null => {
-  const saved = localStorage.getItem('llmlike-gamestate');
-  return saved ? JSON.parse(saved) : null;
+  const savedState = localStorage.getItem('llm_roguelike_save');
+  if (savedState) {
+    return JSON.parse(savedState);
+  }
+  return null;
 };

@@ -91,7 +91,7 @@ export const generateNextStory = async (
 };
 
 export const getEnemy = (enemyId: string): Enemy | undefined => {
-  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES] as Enemy;
+  return MOCK_ENEMIES[enemyId as keyof typeof MOCK_ENEMIES];
 };
 
 export const processChoice = async (
