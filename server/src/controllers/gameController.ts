@@ -149,6 +149,169 @@ export const gameController = {
         }
       });
 
+      // 캐릭터 상태 업데이트 (Claude API에서 변경사항이 있는 경우)
+      let updatedCharacter = character;
+      if (storyResponse.characterChanges) {
+        const changes = storyResponse.characterChanges;
+        console.log('🔄 캐릭터 상태 변경:', changes);
+        console.log('📊 변경 전 상태:', {
+          health: `${character.health}/${character.maxHealth}`,
+          mana: `${character.mana}/${character.maxMana}`,
+          gold: character.gold,
+          experience: character.experience
+        });
+        
+        const updateData: any = {};
+        
+        if (changes.health !== undefined) {
+          const newHealth = Math.max(0, Math.min(changes.health, character.maxHealth));
+          const healthDiff = newHealth - character.health;
+          console.log(`💊 체력 변화: ${character.health} → ${newHealth} (${healthDiff >= 0 ? '+' : ''}${healthDiff})`);
+          updateData.health = newHealth;
+        }
+        if (changes.mana !== undefined) {
+          const newMana = Math.max(0, Math.min(changes.mana, character.maxMana));
+          const manaDiff = newMana - character.mana;
+          console.log(`🔮 마나 변화: ${character.mana} → ${newMana} (${manaDiff >= 0 ? '+' : ''}${manaDiff})`);
+          updateData.mana = newMana;
+        }
+        if (changes.gold !== undefined) {
+          const newGold = Math.max(0, changes.gold);
+          const goldDiff = newGold - character.gold;
+          console.log(`💰 골드 변화: ${character.gold} → ${newGold} (${goldDiff >= 0 ? '+' : ''}${goldDiff})`);
+          updateData.gold = newGold;
+        }
+        if (changes.experience !== undefined) {
+          const newExp = Math.max(character.experience, changes.experience); // 경험치는 절대 감소하지 않음
+          const expDiff = newExp - character.experience;
+          
+          if (changes.experience < character.experience) {
+            console.log(`⚠️  경험치 감소 시도 감지! ${character.experience} → ${changes.experience} (무시됨)`);
+            console.log(`✅ 경험치 유지: ${character.experience}`);
+          } else {
+            console.log(`⭐ 경험치 변화: ${character.experience} → ${newExp} (${expDiff >= 0 ? '+' : ''}${expDiff})`);
+          }
+          
+          updateData.experience = newExp;
+        }
+        
+        // 새로운 스킬 추가
+        if (changes.newSkills && changes.newSkills.length > 0) {
+          console.log('🎯 새로운 스킬 추가:', changes.newSkills);
+          
+          for (const skillData of changes.newSkills) {
+            await prisma.skill.create({
+              data: {
+                name: skillData.name,
+                description: skillData.description,
+                manaCost: skillData.manaCost,
+                damage: skillData.damage || null,
+                healing: skillData.healing || null,
+                effects: skillData.effects || null,
+                characterId: characterId
+              }
+            });
+            console.log(`✅ 스킬 추가됨: ${skillData.name} (${skillData.manaCost} MP)`);
+          }
+        }
+
+        // 새로운 아이템 추가
+        if (changes.newItems && changes.newItems.length > 0) {
+          console.log('📦 새로운 아이템 추가:', changes.newItems);
+          
+          for (const itemName of changes.newItems) {
+            await prisma.item.create({
+              data: {
+                name: itemName,
+                description: `획득한 아이템: ${itemName}`,
+                type: 'misc', // 기본 타입
+                value: 1, // 기본 가치
+                characterId: characterId
+              }
+            });
+            console.log(`✅ 아이템 추가됨: ${itemName}`);
+          }
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          updatedCharacter = await prisma.character.update({
+            where: { id: characterId },
+            data: updateData,
+            include: {
+              items: true,
+              skills: true,
+              gameState: {
+                include: {
+                  storyEvents: {
+                    orderBy: { createdAt: 'asc' }
+                  }
+                }
+              }
+            }
+          });
+          
+          console.log('✅ 캐릭터 상태 업데이트 완료:', {
+            health: `${updatedCharacter.health}/${updatedCharacter.maxHealth}`,
+            mana: `${updatedCharacter.mana}/${updatedCharacter.maxMana}`,
+            gold: updatedCharacter.gold,
+            experience: updatedCharacter.experience
+          });
+
+          // 레벨업 체크 및 처리
+          const requiredExp = updatedCharacter.level * 100;
+          if (updatedCharacter.experience >= requiredExp) {
+            const newLevel = updatedCharacter.level + 1;
+            const remainingExp = updatedCharacter.experience - requiredExp;
+            
+            console.log(`🎉 레벨업! 레벨 ${updatedCharacter.level} → ${newLevel}`);
+            console.log(`📈 남은 경험치: ${remainingExp}`);
+            
+            // 레벨업 시 스탯 증가
+            const levelUpData = {
+              level: newLevel,
+              experience: remainingExp,
+              maxHealth: updatedCharacter.maxHealth + 20,
+              health: updatedCharacter.maxHealth + 20, // 레벨업 시 체력 완전 회복
+              maxMana: updatedCharacter.maxMana + 10,
+              mana: updatedCharacter.maxMana + 10, // 레벨업 시 마나 완전 회복
+              strength: updatedCharacter.strength + 2,
+              intelligence: updatedCharacter.intelligence + 2,
+              dexterity: updatedCharacter.dexterity + 2,
+              constitution: updatedCharacter.constitution + 2
+            };
+            
+            updatedCharacter = await prisma.character.update({
+              where: { id: characterId },
+              data: levelUpData,
+              include: {
+                items: true,
+                skills: true,
+                gameState: {
+                  include: {
+                    storyEvents: {
+                      orderBy: { createdAt: 'asc' }
+                    }
+                  }
+                }
+              }
+            });
+            
+            console.log('🚀 레벨업 완료:', {
+              level: updatedCharacter.level,
+              health: `${updatedCharacter.health}/${updatedCharacter.maxHealth}`,
+              mana: `${updatedCharacter.mana}/${updatedCharacter.maxMana}`,
+              experience: `${updatedCharacter.experience}/${updatedCharacter.level * 100}`,
+              stats: {
+                strength: updatedCharacter.strength,
+                intelligence: updatedCharacter.intelligence,
+                dexterity: updatedCharacter.dexterity,
+                constitution: updatedCharacter.constitution
+              }
+            });
+          }
+        }
+      }
+
       // 게임 상태 업데이트
       await prisma.gameState.update({
         where: { id: character.gameState.id },
@@ -162,7 +325,25 @@ export const gameController = {
         success: true,
         data: {
           storyEvent: newStoryEvent,
-          currentStage: character.gameState.currentStage + 1
+          currentStage: character.gameState.currentStage + 1,
+          character: {
+            id: updatedCharacter.id,
+            name: updatedCharacter.name,
+            job: updatedCharacter.job,
+            level: updatedCharacter.level,
+            health: updatedCharacter.health,
+            maxHealth: updatedCharacter.maxHealth,
+            mana: updatedCharacter.mana,
+            maxMana: updatedCharacter.maxMana,
+            strength: updatedCharacter.strength,
+            intelligence: updatedCharacter.intelligence,
+            dexterity: updatedCharacter.dexterity,
+            constitution: updatedCharacter.constitution,
+            inventory: updatedCharacter.items,
+            gold: updatedCharacter.gold,
+            experience: updatedCharacter.experience,
+            skills: updatedCharacter.skills
+          }
         }
       });
 

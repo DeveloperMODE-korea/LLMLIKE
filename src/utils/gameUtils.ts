@@ -31,7 +31,7 @@ export const createCharacter = (name: string, job: Job): Character => {
 export const generateNextStory = async (
   gameState: GameState, 
   choiceId?: number
-): Promise<StoryEvent> => {
+): Promise<{storyEvent: StoryEvent, updatedCharacter?: Character}> => {
   try {
     // 선택한 텍스트 찾기
     let userChoice: string | undefined;
@@ -45,6 +45,8 @@ export const generateNextStory = async (
       characterId: gameState.character.id,
       userChoice
     });
+
+    console.log('📨 스토리 생성 응답:', response);
 
     // 응답 데이터를 StoryEvent 형태로 변환
     const storyEvent: StoryEvent = {
@@ -61,7 +63,37 @@ export const generateNextStory = async (
       selectedChoice: response.storyEvent.selectedChoice
     };
 
-    return storyEvent;
+    // 캐릭터 상태가 업데이트된 경우 반환
+    let updatedCharacter: Character | undefined;
+    if (response.character) {
+      updatedCharacter = {
+        id: response.character.id,
+        name: response.character.name,
+        job: response.character.job,
+        level: response.character.level,
+        health: response.character.health,
+        maxHealth: response.character.maxHealth,
+        mana: response.character.mana,
+        maxMana: response.character.maxMana,
+        strength: response.character.strength,
+        intelligence: response.character.intelligence,
+        dexterity: response.character.dexterity,
+        constitution: response.character.constitution,
+        inventory: response.character.inventory || [],
+        gold: response.character.gold,
+        experience: response.character.experience,
+        skills: response.character.skills || []
+      };
+      
+      console.log('🔄 캐릭터 상태 업데이트됨:', {
+        health: `${updatedCharacter.health}/${updatedCharacter.maxHealth}`,
+        mana: `${updatedCharacter.mana}/${updatedCharacter.maxMana}`,
+        gold: updatedCharacter.gold,
+        experience: updatedCharacter.experience
+      });
+    }
+
+    return { storyEvent, updatedCharacter };
     
   } catch (error) {
     console.error('스토리 생성 오류:', error);
@@ -84,7 +116,7 @@ export const generateNextStory = async (
         nextEvent.stageNumber = currentStage + 1;
         nextEvent.id = uuidv4();
         
-        resolve(nextEvent);
+        resolve({ storyEvent: nextEvent });
       }, 1000);
     });
   }
@@ -110,13 +142,14 @@ export const processChoice = async (
   }
   
   // Get the next story based on the choice
-  const nextEvent = await generateNextStory(gameState, choiceId);
+  const result = await generateNextStory(gameState, choiceId);
   
   return {
     ...gameState,
+    character: result.updatedCharacter || gameState.character,
     storyHistory: updatedHistory,
     currentStage: gameState.currentStage + 1,
-    currentEvent: nextEvent,
+    currentEvent: result.storyEvent,
     waitingForApi: false,
   };
 };

@@ -20,6 +20,21 @@ interface StoryGenerationResponse {
   }[];
   type: '이야기' | '전투' | '보물' | '상점' | '휴식';
   enemyId?: string;
+  characterChanges?: {
+    health?: number;
+    mana?: number;
+    gold?: number;
+    experience?: number;
+    newItems?: any[];
+    newSkills?: {
+      name: string;
+      description: string;
+      manaCost: number;
+      damage?: number;
+      healing?: number;
+      effects?: any;
+    }[];
+  };
 }
 
 export class ClaudeService {
@@ -72,6 +87,41 @@ export class ClaudeService {
 4. 캐릭터의 직업과 능력치를 고려한 이벤트 생성
 5. 100단계까지 진행되는 장대한 모험
 6. 한국어로 응답해주세요
+7. **중요**: 스킬 사용, 전투, 휴식 등으로 캐릭터 상태가 변한다면 characterChanges에 반드시 포함해주세요!
+
+**레벨업 시스템:**
+- 경험치가 (현재 레벨 × 100)에 도달하면 자동으로 레벨업됩니다
+- 현재 경험치: ${character.experience}/${character.level * 100}
+- 레벨업까지 필요한 경험치: ${(character.level * 100) - character.experience}
+- **주의**: 레벨업은 백엔드에서 자동 처리되므로 characterChanges에서 level은 변경하지 마세요
+
+**경험치 획득 가이드:**
+- 몬스터 처치: 10-30 경험치
+- 퀘스트 완료: 20-50 경험치
+- 특별한 발견: 15-25 경험치
+- 어려운 상황 해결: 25-40 경험치
+- **중요**: 경험치는 절대로 감소하지 않습니다! 현재 경험치(${character.experience})보다 높은 값만 설정하세요
+
+**스킬 시스템:**
+- 현재 보유 스킬: ${character.skills.map(skill => `${skill.name}(${skill.manaCost} MP)`).join(', ') || '없음'}
+- 스킬 습득: 상점에서 구매, 트레이너에게 학습, 특별한 이벤트로 획득 가능
+- 스킬 사용: 마나 소모로 강력한 효과 발동
+
+**새로운 스킬 추가 시:**
+- newSkills 배열에 스킬 정보 포함
+- 예시: "newSkills": [{"name": "마법 화살", "description": "기본적인 마법 공격", "manaCost": 8, "damage": 25}]
+
+**스킬 비용:**
+- 화염구: 10 MP
+- 얼음화살: 8 MP
+- 치유술: 12 MP
+- 번개 화살: 15 MP
+
+**캐릭터 상태 변경 계산 규칙:**
+- 현재 체력: ${character.health}/${character.maxHealth}
+- 현재 마나: ${character.mana}/${character.maxMana}
+- 현재 골드: ${character.gold}
+- 현재 경험치: ${character.experience}
 
 **응답 형식 (JSON):**
 {
@@ -82,8 +132,39 @@ export class ClaudeService {
     {"id": 3, "text": "선택지 3"}
   ],
   "type": "이야기|전투|보물|상점|휴식",
-  "enemyId": "적이 있을 경우 적 ID (옵션)"
-}${historyContext}
+  "enemyId": "적이 있을 경우 적 ID (옵션)",
+  "characterChanges": {
+    "health": 새로운_체력값,
+    "mana": 새로운_마나값,
+    "gold": 새로운_골드값,
+    "experience": 새로운_경험치값,
+    "newItems": ["새로운 아이템들"],
+    "newSkills": [
+      {
+        "name": "스킬명",
+        "description": "스킬 설명",
+        "manaCost": 마나_소모량,
+        "damage": 공격력(옵션),
+        "healing": 치유량(옵션),
+        "effects": {"특수효과": "값"}
+      }
+    ]
+  }
+}
+
+**characterChanges 계산 예시:**
+- 25 HP 피해를 받았다면: "health": ${Math.max(0, character.health - 25)}
+- 10 MP 마나를 사용했다면: "mana": ${Math.max(0, character.mana - 10)}
+- 20 골드를 얻었다면: "gold": ${character.gold + 20}
+- 15 경험치를 얻었다면: "experience": ${character.experience + 15}
+- 휴식으로 마나 회복(+10): "mana": ${Math.min(character.maxMana, character.mana + 10)}
+
+**중요한 주의사항:**
+- 변경된 수치만 포함하세요 (변경되지 않았다면 해당 필드 생략)
+- health는 0 이하로 떨어질 수 없고, ${character.maxHealth}를 초과할 수 없습니다
+- mana는 0 이하로 떨어질 수 없고, ${character.maxMana}를 초과할 수 없습니다
+- 골드와 경험치는 0 이하로 떨어질 수 없습니다
+- 정확한 수치 계산을 위해 현재 값에서 변화량을 더하거나 빼서 새로운 값을 구하세요${historyContext}
 
 다음 단계의 이야기를 생성해주세요.`;
   }
@@ -101,7 +182,7 @@ export class ClaudeService {
 
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 1000,
         temperature: 0.8,
         system: systemPrompt,
@@ -150,7 +231,7 @@ export class ClaudeService {
       const anthropic = this.getAnthropicClient();
       
       await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 10,
         messages: [
           {

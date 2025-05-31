@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Job, GameState } from '../types/game';
 import { JOB_DETAILS } from '../data/jobs';
 import { createCharacter, generateNextStory } from '../utils/gameUtils';
+import { apiService } from '../services/apiService';
 import { Swords, Wand, Flame, Cross } from 'lucide-react';
 
 interface CharacterCreationProps {
@@ -26,7 +27,7 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
     setSelectedJob(job);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1) {
       if (!name.trim()) {
         setNameError('캐릭터 이름을 입력해주세요');
@@ -37,29 +38,96 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
     } else if (step === 2 && selectedJob) {
       setIsLoading(true);
       
-      const character = createCharacter(name, selectedJob);
-      
-      const initialGameState: GameState = {
-        character,
-        currentStage: 0,
-        storyHistory: [],
-        gameStatus: 'playing',
-        waitingForApi: true
-      };
-      
-      generateNextStory(initialGameState)
-        .then(firstEvent => {
-          const updatedGameState = {
-            ...initialGameState,
-            currentEvent: firstEvent,
-            waitingForApi: false
-          };
-          onCharacterCreated(updatedGameState);
-        })
-        .catch(error => {
-          console.error('스토리 생성 오류:', error);
-          setIsLoading(false);
-        });
+      try {
+        // 백엔드에 캐릭터 생성 요청
+        console.log('백엔드에 캐릭터 생성 요청 중...');
+        const jobDetails = JOB_DETAILS[selectedJob];
+        
+        const characterData = {
+          name,
+          job: selectedJob,
+          stats: {
+            health: jobDetails.startingStats.health,
+            mana: jobDetails.startingStats.mana,
+            strength: jobDetails.startingStats.strength,
+            intelligence: jobDetails.startingStats.intelligence,
+            dexterity: jobDetails.startingStats.dexterity,
+            constitution: jobDetails.startingStats.constitution,
+          }
+        };
+
+        const backendResponse = await apiService.createCharacter(characterData);
+        console.log('백엔드에서 캐릭터 생성 완료:', backendResponse);
+        console.log('📋 백엔드 응답 구조 세부사항:');
+        console.log('  - 응답에 success 속성이 있는가?:', 'success' in backendResponse);
+        console.log('  - 응답에 data 속성이 있는가?:', 'data' in backendResponse);
+        console.log('  - 응답에 character 속성이 있는가?:', 'character' in backendResponse);
+        console.log('  - 캐릭터 ID (direct):', backendResponse.character?.id);
+        console.log('  - 캐릭터 ID (data):', backendResponse.data?.character?.id);
+        console.log('  - 전체 백엔드 응답:', JSON.stringify(backendResponse, null, 2));
+        
+        // 백엔드에서 받은 캐릭터 데이터로 로컬 캐릭터 생성
+        // API 서비스에서 이미 data를 추출했으므로 직접 접근
+        const backendCharacter = backendResponse.character;
+        if (!backendCharacter || !backendCharacter.id) {
+          throw new Error('백엔드에서 올바른 캐릭터 데이터를 받지 못했습니다.');
+        }
+        
+        const character = {
+          id: backendCharacter.id,
+          name: backendCharacter.name,
+          job: backendCharacter.job,
+          level: backendCharacter.level,
+          health: backendCharacter.health,
+          maxHealth: backendCharacter.maxHealth,
+          mana: backendCharacter.mana,
+          maxMana: backendCharacter.maxMana,
+          strength: backendCharacter.strength,
+          intelligence: backendCharacter.intelligence,
+          dexterity: backendCharacter.dexterity,
+          constitution: backendCharacter.constitution,
+          inventory: backendCharacter.items || [],
+          gold: backendCharacter.gold,
+          experience: backendCharacter.experience,
+          skills: backendCharacter.skills || jobDetails.startingSkills,
+        };
+        
+        console.log('🎭 로컬 캐릭터 생성 결과:');
+        console.log('  - 캐릭터 ID:', character.id);
+        console.log('  - 캐릭터 이름:', character.name);
+        console.log('  - ID 타입:', typeof character.id);
+        console.log('  - 전체 캐릭터:', JSON.stringify(character, null, 2));
+        
+        const initialGameState: GameState = {
+          character,
+          currentStage: 0,
+          storyHistory: [],
+          gameStatus: 'playing',
+          waitingForApi: true
+        };
+        
+        console.log('🎮 게임 상태 생성 결과:');
+        console.log('  - gameState.character.id:', initialGameState.character.id);
+        console.log('  - ID가 존재하는가?', !!initialGameState.character.id);
+        
+        console.log('첫 번째 스토리 생성 요청 중...');
+        const result = await generateNextStory(initialGameState);
+        console.log('첫 번째 스토리 생성 완료:', result);
+        
+        const updatedGameState = {
+          ...initialGameState,
+          character: result.updatedCharacter || initialGameState.character,
+          currentEvent: result.storyEvent,
+          waitingForApi: false
+        };
+        
+        onCharacterCreated(updatedGameState);
+        
+      } catch (error) {
+        console.error('캐릭터 생성 오류:', error);
+        alert('캐릭터 생성에 실패했습니다. 서버 연결을 확인해주세요.');
+        setIsLoading(false);
+      }
     }
   };
 

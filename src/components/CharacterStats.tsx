@@ -1,6 +1,6 @@
 import React from 'react';
 import { Character } from '../types/game';
-import { Shield, Brain, Zap, Heart, Coins, Award } from 'lucide-react';
+import { Shield, Brain, Zap, Heart, Coins, Award, Package } from 'lucide-react';
 
 interface CharacterStatsProps {
   character: Character;
@@ -91,13 +91,32 @@ const CharacterStats: React.FC<CharacterStatsProps> = ({ character }) => {
       {/* 스킬 */}
       <h4 className="text-sm font-bold text-purple-300 mb-2">스킬</h4>
       
-      <ul className="space-y-1">
+      <ul className="space-y-1 mb-4">
         {character.skills.map(skill => (
           <li key={skill.id} className="text-sm">
             <span className="text-yellow-300">{skill.name}</span>
             {skill.manaCost > 0 && <span className="text-blue-400 ml-1">({skill.manaCost} MP)</span>}
           </li>
         ))}
+      </ul>
+      
+      {/* 인벤토리 */}
+      <h4 className="text-sm font-bold text-green-300 mb-2 flex items-center">
+        <Package className="w-4 h-4 mr-1" />
+        인벤토리
+      </h4>
+      
+      <ul className="space-y-1">
+        {character.inventory && character.inventory.length > 0 ? (
+          character.inventory.map(item => (
+            <li key={item.id} className="text-sm">
+              <span className="text-green-300">{item.name}</span>
+              <div className="text-xs text-gray-400 ml-2">{item.description}</div>
+            </li>
+          ))
+        ) : (
+          <li className="text-sm text-gray-500">아이템이 없습니다</li>
+        )}
       </ul>
     </div>
   );

@@ -15,8 +15,15 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS 설정
+const allowedOrigins = [
+  'http://localhost',           // nginx 프록시
+  'http://localhost:3000',      // 개발 서버 (옵션)
+  'http://localhost:5173',      // Vite 개발 서버
+  process.env.FRONTEND_URL || 'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true
 }));
 
