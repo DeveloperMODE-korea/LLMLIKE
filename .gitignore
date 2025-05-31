@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# History folder (에디터 자동 백업 파일)
+.history/
