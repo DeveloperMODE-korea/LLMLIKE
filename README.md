@@ -1,132 +1,243 @@
- # LLMLIKE 🎮
+# LLMLIKE 🎮
 
-**LLM 기반 텍스트 로그라이크 웹 RPG 게임**
+**Claude AI 기반 텍스트 로그라이크 웹 RPG 게임**
 
-> 현재는 기획 단계입니다
+> 완성된 게임입니다! 바로 플레이할 수 있습니다.
 
 ## 📋 개요
 
 Claude API를 활용하여 매 턴마다 새로운 스토리와 전투가 동적으로 생성되는 혁신적인 웹 기반 로그라이크 RPG입니다.
 
-## 🎮 게임 플로우
+## ✨ 주요 기능
 
-```
-캐릭터 생성 → 직업 선택 (전사, 마법사 등) → Claude API 스토리 생성 
-→ 던전/스토리 이벤트 진행 → 100번째 스테이지 완료 시 엔딩
-```
+### 🎮 게임 시스템
+- **동적 스토리 생성**: Claude 3.5 Haiku로 매턴 새로운 모험 생성
+- **완전한 RPG 시스템**: 캐릭터 생성, 레벨업, 스킬, 아이템 시스템
+- **자동 저장**: 게임 진행 상황 자동 저장 및 복구
+- **실시간 캐릭터 상태**: 체력, 마나, 경험치, 골드 실시간 업데이트
 
-- **스토리 연계**: 이전 스토리와 자연스럽게 이어지는 시스템 프롬프트 관리
-- **데이터 저장**: 게임 진행 내역은 DB에 자동 저장
-- **LLM 모델**: Claude 4 Sonnet or Claude 3.5 Haiku (추후 새로운 모델로 업데이트 가능)
+### 🏛️ 게임 콘텐츠
+- **4개 직업**: 전사, 마법사, 도적, 성직자
+- **스킬 시스템**: 직업별 고유 스킬 및 새로운 스킬 습득
+- **아이템 시스템**: 모험 중 다양한 아이템 수집 및 인벤토리 관리
+- **레벨업**: 자동 레벨업 시 스탯 증가 및 체력/마나 회복
 
 ## 🛠 기술 스택
 
 ### 프론트엔드
-- HTML
-- Tailwind CSS
-- TypeScript
+- **React 18** + **TypeScript**
+- **Vite** (빌드 도구)
+- **Tailwind CSS** (스타일링)
+- **Lucide React** (아이콘)
 
-### 백엔드 / 데이터베이스
-- Node.js
-- React Native
-- PostgreSQL
+### 백엔드
+- **Node.js** + **Express**
+- **TypeScript**
+- **Prisma ORM**
+- **PostgreSQL** (데이터베이스)
 
-### 서버
-- Digital Ocean Ubuntu (GitHub 교육용 계정으로 $200 무료 크레딧)
+### AI & 외부 서비스
+- **Claude 3.5 Haiku** (Anthropic API)
 
-## ⭐ 주요 기능
+### 인프라
+- **Docker & Docker Compose**
+- **Nginx** (리버스 프록시)
+- **Adminer** (데이터베이스 관리)
 
-### 핵심 게임 요소
-- **대기시간 시스템**: 45-60초 대기 (유료 플랜에서 스킵 가능)
-- **자동 저장**: 유저 접속 종료 시에도 안전한 진행 상황 복구
-- **API 최적화**: Claude API 비용 절감을 위한 캐싱 전략 (Redis)
-- **멀티 엔딩**: 유저 선택과 행동에 따른 다양한 엔딩 분기
-- **플레이 기록**: 이전 스토리/결과를 텍스트로 확인할 수 있는 UI
+## 🚀 빠른 시작
 
-## 🚀 개발 로드맵
+### 1. 필수 준비사항
 
-### 1단계: 기초 설계 및 환경 세팅
-- [x] 프로젝트 구조 설계 (폴더 구조, API 설계, DB 스키마)
-- [x] 개발 환경 구축 (Node.js, React, TypeScript)
-- [x] DigitalOcean Ubuntu 서버 준비
-- [x] Git 버전 관리 및 GitHub 리포지토리 생성
+- **Node.js** 18+ 설치
+- **Docker & Docker Compose** 설치
+- **Claude API 키** ([Anthropic Console](https://console.anthropic.com/)에서 발급)
 
-### 2단계: 캐릭터 생성 시스템
-- [x] 캐릭터 생성 UI (HTML + Tailwind CSS + TS)
-- [x] 캐릭터 생성 API 개발 (Node.js)
-- [x] 캐릭터 및 직업 테이블 생성 (PostgreSQL)
-- [ ] 유효성 검사 및 에러 처리
+### 2. 저장소 클론
 
-### 3단계: Claude API 연동
-- [ ] Claude API 연동 모듈 개발
-- [ ] 시스템 프롬프트 작성 및 관리 체계
-- [ ] API 요청/응답 처리 및 에러 핸들링
-- [ ] 스토리 생성 기능 테스트
-- [ ] 프론트엔드 스토리 출력 기능
+```bash
+git clone https://github.com/DeveloperMODE-korea/LLMLIKE.git
+cd LLMLIKE
+```
 
-### 4단계: 게임 진행 로직
-- [ ] 던전 및 스토리 이벤트 흐름 제어
-- [ ] AI 기반 전투/이벤트 시뮬레이션
-- [ ] 유저 선택지 및 반응 처리
-- [ ] 게임 진행 상태 DB 저장/복구
+### 3. 환경 변수 설정
 
-### 5단계: 엔딩 시스템
-- [ ] 스테이지 카운팅 및 완료 조건
-- [ ] 다양한 엔딩 분기 설계
-- [ ] 엔딩 결과 저장 및 알림 UI
+```bash
+# .env 파일 생성
+cp env.example .env
 
-### 6단계: 서버 배포
-- [ ] DigitalOcean 서버 배포
-- [ ] Nginx 리버스 프록시 및 SSL 인증서
-- [ ] PM2 프로세스 매니저 적용
-- [ ] CI/CD 파이프라인 구축
+# .env 파일 편집 (Claude API 키 입력)
+# CLAUDE_API_KEY=sk-ant-api03-your-actual-api-key-here
+```
 
-### 7단계: 사용자 경험 개선
-- [x] 상태 관리 라이브러리 도입 (Redux)
-- [ ] 인벤토리, 아이템, 캐릭터 커스터마이징
-- [ ] UI 애니메이션 (Framer Motion)
-- [ ] AI API 캐싱 최적화 (Redis)
-- [ ] 테스트 자동화 및 보안 강화
+**⚠️ 중요**: `.env` 파일에 실제 Claude API 키를 입력해주세요.
 
-### 8단계: 테스트 및 릴리즈
-- [ ] 통합 테스트, 유닛 테스트
-- [ ] 버그 수정 및 최적화
-- [ ] 유저 피드백 반영 후 최종 배포
+### 4. 서버 실행
 
-## 🌐 배포 계획
+```bash
+# Docker로 모든 서비스 실행
+docker-compose up -d
 
-- **도메인**: 커스텀 도메인 적용
-- **SSL 인증서**: Let's Encrypt를 통한 HTTPS 적용
-- **오픈소스**: GitHub에 초기 버전 공개 (이후 업데이트는 개발자가 직접 관리)
+# 빌드와 함께 실행 (최초 실행시)
+docker-compose up --build -d
+```
 
-## 💰 추후 추가 기능 (고려사항)
+### 5. 게임 접속
 
-### 수익화
-- **유료 플랜**: 대기시간 스킵, 유료 아이템, Claude 모델 변경 기능
-- **Google AdSense**: 게임 플레이를 방해하지 않는 상단/하단 광고
+브라우저에서 **http://localhost** 접속
 
-### 확장 기능
-- **커뮤니티 & 소셜 기능**
-- **다국어 지원 및 국제화**
-- **게임 데이터 분석 대시보드**
-- **백업 및 복구 시스템**
-- **AI 프롬프트 커스터마이징** (유료 기능)
+## 📁 프로젝트 구조
+
+```
+LLMLIKE/
+├── src/                    # 프론트엔드 소스
+│   ├── components/         # React 컴포넌트
+│   ├── services/          # API 서비스
+│   ├── types/             # TypeScript 타입
+│   └── utils/             # 유틸리티 함수
+├── server/                 # 백엔드 소스
+│   ├── src/
+│   │   ├── controllers/   # API 컨트롤러
+│   │   ├── services/      # 비즈니스 로직
+│   │   ├── routes/        # API 라우트
+│   │   └── types/         # 타입 정의
+│   └── prisma/            # 데이터베이스 스키마
+├── docker-compose.yml     # Docker 설정
+├── nginx.conf            # Nginx 설정
+└── README.md             # 이 파일
+```
+
+## 🎮 게임 플레이 가이드
+
+### 캐릭터 생성
+1. 게임 접속 후 "새 게임 시작" 클릭
+2. 캐릭터 이름 입력
+3. 직업 선택 (전사/마법사/도적/성직자)
+4. 게임 시작!
+
+### 게임 진행
+- 매턴 Claude AI가 생성한 스토리 읽기
+- 제시된 선택지 중 하나 선택
+- 캐릭터 상태 변화 확인 (체력, 마나, 경험치, 골드)
+- 새로운 스킬이나 아이템 획득시 인벤토리 확인
+
+### 캐릭터 성장
+- **경험치**: 100 달성시 자동 레벨업
+- **레벨업 보상**: 모든 스탯 +2, 최대 체력 +20, 최대 마나 +10
+- **스킬**: 특정 이벤트에서 새로운 스킬 습득 가능
+- **아이템**: 모험 중 다양한 아이템 수집
+
+## 🔧 개발자 도구
+
+### 데이터베이스 관리
+- **Adminer**: http://localhost:8080
+  - 서버: `llmlike-db`
+  - 사용자: `postgres`
+  - 비밀번호: `llmlike123`
+  - 데이터베이스: `llmlike`
+
+### 로그 확인
+```bash
+# 전체 로그
+docker-compose logs -f
+
+# 백엔드 로그만
+docker-compose logs -f backend
+
+# 프론트엔드 로그만
+docker-compose logs -f frontend
+```
+
+### 서비스 재시작
+```bash
+# 전체 재시작
+docker-compose restart
+
+# 특정 서비스만 재시작
+docker-compose restart backend
+docker-compose restart frontend
+```
+
+## 🛡️ 보안 주의사항
+
+- **API 키 보호**: `.env` 파일은 절대 커밋하지 마세요
+- **포트 보안**: 프로덕션 환경에서는 필요한 포트만 열어주세요
+- **정기 업데이트**: 의존성 패키지를 정기적으로 업데이트하세요
+
+## 🐛 문제 해결
+
+### 일반적인 문제들
+
+**1. Docker 서비스가 시작되지 않는 경우:**
+```bash
+docker-compose down
+docker-compose up --build -d
+```
+
+**2. 데이터베이스 연결 실패:**
+```bash
+# 데이터베이스 컨테이너 상태 확인
+docker-compose ps
+docker-compose logs db
+```
+
+**3. Claude API 에러:**
+- `.env` 파일에 올바른 API 키가 설정되었는지 확인
+- API 키 권한 및 크레딧 상태 확인
+
+**4. 포트 충돌:**
+- 80, 3001, 5432, 8080 포트가 사용중인지 확인
+- `docker-compose.yml`에서 포트 변경 가능
+
+## 📊 시스템 요구사항
+
+### 최소 요구사항
+- **RAM**: 4GB 이상
+- **저장공간**: 2GB 이상
+- **CPU**: 듀얼코어 이상
+
+### 권장 요구사항
+- **RAM**: 8GB 이상
+- **저장공간**: 5GB 이상
+- **CPU**: 쿼드코어 이상
+
+## 🔄 업데이트
+
+```bash
+# 최신 코드 가져오기
+git pull origin main
+
+# 서비스 재빌드 및 재시작
+docker-compose down
+docker-compose up --build -d
+```
 
 ## 🤝 기여하기
 
-아이디어 협업 및 기여는 언제나 환영합니다!
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-📧 **연락처**: frexxx9206@naver.com
+## 📞 지원 및 문의
 
-## 이미지
-![LLMLIKE1](https://github.com/user-attachments/assets/380b0cd6-b2f7-4772-b737-7f4de117e170)
-![LLMLIKE2](https://github.com/user-attachments/assets/a8ef4d5a-5419-4fa7-929e-b1c6501c289c)
-
+- **이메일**: frexxx9206@naver.com
+- **GitHub Issues**: [이슈 등록](https://github.com/DeveloperMODE-korea/LLMLIKE/issues)
 
 ## 📄 라이선스
 
-이 프로젝트는 오픈소스로 공개되며, 초기 버전은 GitHub에서 확인할 수 있습니다.
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 🎮 게임 스크린샷
+
+![LLMLIKE1](https://github.com/user-attachments/assets/380b0cd6-b2f7-4772-b737-7f4de117e170)
+![LLMLIKE2](https://github.com/user-attachments/assets/a8ef4d5a-5419-4fa7-929e-b1c6501c289c)
+
+## 📈 버전 히스토리
+
+- **v1.1.0** (2025.05.31): 완전한 RPG 시스템 구현
+- **v1.0.0** (2025.05.31): 초기 버전 릴리즈
 
 ---
 
-**⚠️ 주의사항**: 현재 기획 단계이며, 실제 개발 일정과 기능은 변경될 수 있습니다.
+**🎯 지금 바로 시작하세요!** `docker-compose up -d` 명령어 하나로 완전한 RPG 경험을 즐기실 수 있습니다.
