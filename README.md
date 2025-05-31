@@ -229,9 +229,9 @@ docker-compose up --build -d
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
 ## 🎮 게임 스크린샷
-
-![LLMLIKE1](https://github.com/user-attachments/assets/380b0cd6-b2f7-4772-b737-7f4de117e170)
-![LLMLIKE2](https://github.com/user-attachments/assets/a8ef4d5a-5419-4fa7-929e-b1c6501c289c)
+![LLMLIKE1](https://github.com/user-attachments/assets/89ee7a1c-ee0b-41e8-851e-1b1923629d3f)
+![LLMLIKE2](https://github.com/user-attachments/assets/1c394233-751a-4f22-b093-e1049ac1b417)
+![LLMLIKE3](https://github.com/user-attachments/assets/3947e435-c1d9-4f5d-b170-775ebc1187da)
 
 ## 📈 버전 히스토리
 
