@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaClient } from '@prisma/client';
 import { Character, StoryEvent } from '../types/game';
+// TODO: 세계관 시스템 연동 (프론트엔드 의존성 해결 후)
+// import WorldManager from '../../src/data/worldSettings';
 
 const prisma = new PrismaClient();
 
@@ -79,6 +81,7 @@ export class ClaudeService {
 - 힘: ${character.strength}, 지능: ${character.intelligence}, 민첩: ${character.dexterity}, 체질: ${character.constitution}
 - 골드: ${character.gold}
 - 경험치: ${character.experience}
+- 현재 인벤토리: ${character.inventory?.map(item => item.name).join(', ') || '없음'}
 
 **게임 규칙:**
 1. 매 턴마다 흥미진진한 이야기를 생성해주세요
@@ -158,6 +161,11 @@ export class ClaudeService {
 - 20 골드를 얻었다면: "gold": ${character.gold + 20}
 - 15 경험치를 얻었다면: "experience": ${character.experience + 15}
 - 휴식으로 마나 회복(+10): "mana": ${Math.min(character.maxMana, character.mana + 10)}
+
+**아이템 및 선택지 규칙:**
+- 이미 보유한 아이템은 선택지에서 제외하세요
+- 중복 아이템 획득 선택지를 만들지 마세요
+- 예: "고블린 부적"을 이미 가지고 있다면 "부적을 챙긴다" 선택지 금지
 
 **중요한 주의사항:**
 - 변경된 수치만 포함하세요 (변경되지 않았다면 해당 필드 생략)

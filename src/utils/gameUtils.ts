@@ -252,9 +252,25 @@ export const processCombatAction = (
 
 export const saveGameState = (gameState: GameState): void => {
   localStorage.setItem('llmlike-gamestate', JSON.stringify(gameState));
+  console.log('🎮 게임 저장됨:', {
+    character: gameState.character.name,
+    level: gameState.character.level,
+    stage: gameState.currentStage,
+    worldId: gameState.worldId
+  });
 };
 
 export const loadGameState = (): GameState | null => {
   const saved = localStorage.getItem('llmlike-gamestate');
-  return saved ? JSON.parse(saved) : null;
+  if (saved) {
+    const gameState = JSON.parse(saved);
+    console.log('🎮 게임 로드됨:', {
+      character: gameState.character?.name,
+      level: gameState.character?.level,
+      stage: gameState.currentStage,
+      worldId: gameState.worldId
+    });
+    return gameState;
+  }
+  return null;
 };

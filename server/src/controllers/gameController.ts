@@ -215,21 +215,34 @@ export const gameController = {
           }
         }
 
-        // 새로운 아이템 추가
+        // 새로운 아이템 추가 (중복 체크)
         if (changes.newItems && changes.newItems.length > 0) {
           console.log('📦 새로운 아이템 추가:', changes.newItems);
           
+          // 현재 캐릭터의 모든 아이템 조회
+          const existingItems = await prisma.item.findMany({
+            where: { characterId: characterId },
+            select: { name: true }
+          });
+          
+          const existingItemNames = existingItems.map(item => item.name);
+          
           for (const itemName of changes.newItems) {
-            await prisma.item.create({
-              data: {
-                name: itemName,
-                description: `획득한 아이템: ${itemName}`,
-                type: 'misc', // 기본 타입
-                value: 1, // 기본 가치
-                characterId: characterId
-              }
-            });
-            console.log(`✅ 아이템 추가됨: ${itemName}`);
+            // 중복 아이템 체크
+            if (!existingItemNames.includes(itemName)) {
+              await prisma.item.create({
+                data: {
+                  name: itemName,
+                  description: `획득한 아이템: ${itemName}`,
+                  type: 'misc', // 기본 타입
+                  value: 1, // 기본 가치
+                  characterId: characterId
+                }
+              });
+              console.log(`✅ 아이템 추가됨: ${itemName}`);
+            } else {
+              console.log(`⚠️ 중복 아이템 스킵: ${itemName} (이미 보유 중)`);
+            }
           }
         }
         

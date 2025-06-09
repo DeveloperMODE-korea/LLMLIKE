@@ -66,6 +66,7 @@ export interface GameState {
   gameStatus: 'menu' | 'creating' | 'playing' | 'paused' | 'ended';
   currentEvent?: StoryEvent;
   waitingForApi: boolean;
+  worldId?: string; // 선택된 세계관 ID
 }
 
 export interface StoryEvent {

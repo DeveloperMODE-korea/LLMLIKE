@@ -1,15 +1,24 @@
-import React from 'react';
-import { Swords, BookOpen, Skull } from 'lucide-react';
+import React, { useState } from 'react';
+import { Swords, BookOpen, Skull, Globe } from 'lucide-react';
+import WorldSelector from './WorldSelector';
+import { WorldSettingId } from '../data/worldSettings';
 
 interface StartScreenProps {
-  onStartNew: () => void;
+  onStartNew: (worldId?: WorldSettingId) => void;
   onContinue: () => void;
   hasSavedGame: boolean;
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStartNew, onContinue, hasSavedGame }) => {
+  const [selectedWorldId, setSelectedWorldId] = useState<WorldSettingId>('dimensional_rift');
+  const [showWorldSelector, setShowWorldSelector] = useState(false);
+
+  const handleStartNewGame = () => {
+    onStartNew(selectedWorldId);
+  };
+
   return (
-    <div className="flex flex-col items-center animate-fadeIn">
+    <div className="flex flex-col items-center animate-fadeIn space-y-6">
       <div className="text-center mb-10">
         <h2 className="text-6xl font-bold text-purple-300 mb-2">
           LLM<span className="text-yellow-400">LIKE</span>
@@ -49,8 +58,17 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartNew, onContinue, hasSa
         </div>
 
         <div className="flex flex-col space-y-4">
+          {/* 세계관 선택 버튼 */}
           <button
-            onClick={onStartNew}
+            onClick={() => setShowWorldSelector(!showWorldSelector)}
+            className="bg-indigo-700 hover:bg-indigo-600 text-white py-3 px-6 rounded-lg font-bold transition-all duration-200 flex items-center justify-center"
+          >
+            <Globe className="mr-2 w-5 h-5" />
+            {showWorldSelector ? '세계관 선택 닫기' : '세계관 선택하기'}
+          </button>
+
+          <button
+            onClick={handleStartNewGame}
             className="bg-purple-700 hover:bg-purple-600 text-white py-3 px-6 rounded-lg font-bold transition-all duration-200 flex items-center justify-center"
           >
             <Swords className="mr-2 w-5 h-5" />
@@ -68,6 +86,19 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartNew, onContinue, hasSa
           )}
         </div>
       </div>
+
+      {/* 세계관 선택 패널 */}
+      {showWorldSelector && (
+        <div className="w-full max-w-2xl animate-fadeIn">
+          <WorldSelector
+            onWorldSelected={(worldId) => {
+              setSelectedWorldId(worldId);
+              setShowWorldSelector(false);
+            }}
+            currentWorldId={selectedWorldId}
+          />
+        </div>
+      )}
     </div>
   );
 };
