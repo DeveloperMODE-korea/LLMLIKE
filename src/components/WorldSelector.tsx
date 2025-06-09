@@ -25,6 +25,10 @@ const WorldSelector: React.FC<WorldSelectorProps> = ({ onWorldSelected, currentW
         return <Sparkles className="w-6 h-6 text-purple-400" />;
       case 'cyberpunk_2187':
         return <Zap className="w-6 h-6 text-cyan-400" />;
+      case 'dark_finance':
+        return <span className="w-6 h-6 text-green-400 text-xl">🌑</span>;
+      case 'classic_fantasy':
+        return <span className="w-6 h-6 text-yellow-400 text-xl">🏰</span>;
       case 'steampunk_empire':
         return <Globe className="w-6 h-6 text-amber-400" />;
       case 'space_odyssey':
@@ -84,19 +88,18 @@ const WorldSelector: React.FC<WorldSelectorProps> = ({ onWorldSelected, currentW
           <h4 className="text-purple-300 font-bold mb-2">🎭 세계관 미리보기</h4>
           <div className="text-sm text-gray-300">
             {(() => {
-              const currentWorld = WorldManager.getCurrentWorld();
-              if (selectedWorld === currentWorld.id) {
-                return (
-                  <div className="space-y-2">
-                    <p><strong>장르:</strong> {currentWorld.genre}</p>
-                    <p><strong>지역 수:</strong> {currentWorld.regions.length}개</p>
-                    <p><strong>스토리 아크:</strong> {currentWorld.storyArcs.length}개</p>
-                    <p><strong>특별 시스템:</strong> {currentWorld.gameSystems.length}개</p>
-                  </div>
-                );
-              } else {
-                return <p className="text-gray-500">구현 예정인 세계관입니다.</p>;
-              }
+              // 선택된 세계관의 정보를 가져오기
+              WorldManager.setCurrentWorld(selectedWorld);
+              const selectedWorldData = WorldManager.getCurrentWorld();
+              
+              return (
+                <div className="space-y-2">
+                  <p><strong>장르:</strong> {selectedWorldData.genre}</p>
+                  <p><strong>지역 수:</strong> {selectedWorldData.regions.length}개</p>
+                  <p><strong>스토리 아크:</strong> {selectedWorldData.storyArcs.length}개</p>
+                  <p><strong>특별 시스템:</strong> {selectedWorldData.gameSystems.length}개</p>
+                </div>
+              );
             })()}
           </div>
         </div>

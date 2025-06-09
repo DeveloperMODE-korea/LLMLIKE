@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import gameRoutes from './routes/gameRoutes';
+import advancedSystemsRoutes from './routes/advancedSystems';
+import adminRoutes from './routes/admin';
+import authRoutes from './routes/auth.routes';
 
 // 환경 변수 로드
 dotenv.config();
@@ -39,7 +42,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // 라우트
+app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/advanced', advancedSystemsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 헬스 체크
 app.get('/health', (req, res) => {

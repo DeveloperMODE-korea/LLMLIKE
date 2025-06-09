@@ -15,6 +15,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // 인증 정보
+  email     String   @unique
+  username  String   @unique
+  password  String
+  
   // API 키 관리
   claudeApiKey String?
   

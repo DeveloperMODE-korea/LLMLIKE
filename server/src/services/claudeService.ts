@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaClient } from '@prisma/client';
 import { Character, StoryEvent } from '../types/game';
-// TODO: 세계관 시스템 연동 (프론트엔드 의존성 해결 후)
-// import WorldManager from '../../src/data/worldSettings';
+import { WORLD_PROMPTS } from '../data/worldPrompts';
 
 const prisma = new PrismaClient();
 
@@ -11,6 +10,13 @@ interface StoryGenerationRequest {
   currentStage: number;
   storyHistory: StoryEvent[];
   userChoice?: string;
+  advancedSystems?: {
+    characterMemories: any[];
+    npcRelationships: any[];
+    factionReputations: any[];
+    activeSideQuests: any[];
+  };
+  gameContext?: any;
 }
 
 interface StoryGenerationResponse {
@@ -52,6 +58,18 @@ export class ClaudeService {
     });
   }
 
+  // 사용자 타입에 따른 모델 선택
+  private getModelForUser(userId: string): string {
+    // 게스트 모드
+    if (userId === 'guest') {
+      return 'claude-3-haiku-20240307';
+    }
+    
+    // 일반 회원 (향후 BM 모델 확정 시 조건 추가 예정)
+    // TODO: BM 모델 확정 시 claude-3-sonnet-20240229 모델 사용
+    return 'claude-3-5-haiku-20241022';
+  }
+
   // 더 이상 사용자별 API 키를 사용하지 않음
   async getUserApiKey(userId: string): Promise<string | null> {
     return process.env.CLAUDE_API_KEY || null;
@@ -63,14 +81,86 @@ export class ClaudeService {
     console.log('공통 API 키를 사용합니다. 사용자별 API 키 설정은 무시됩니다.');
   }
 
-  private generateSystemPrompt(character: Character, storyHistory: StoryEvent[]): string {
+  private generateSystemPrompt(character: Character, storyHistory: StoryEvent[], worldId: string = 'classic_fantasy', advancedSystems?: any): string {
     const historyContext = storyHistory.length > 0 
       ? `\n\n이전 스토리:\n${storyHistory.map(event => 
           `${event.stageNumber}단계: ${event.content}\n선택: ${event.selectedChoice !== undefined ? event.choices[event.selectedChoice]?.text : '없음'}\n결과: ${event.result || '진행중'}`
         ).join('\n\n')}`
       : '';
 
-    return `당신은 텍스트 로그라이크 RPG의 게임 마스터입니다.
+    // 세계관별 프롬프트 선택
+    const worldPrompt = WORLD_PROMPTS[worldId] || WORLD_PROMPTS['classic_fantasy'];
+    
+    const worldContext = `\n\n**🌟 세계관: ${worldId}**
+${worldPrompt.settingDescription}
+
+${worldPrompt.characterContext}
+
+${worldPrompt.storyGuidelines}`;
+
+    // 고급 시스템 컨텍스트 생성
+    let advancedContext = '';
+    if (advancedSystems) {
+      // 캐릭터 기억
+      if (advancedSystems.characterMemories?.length > 0) {
+        const importantMemories = advancedSystems.characterMemories
+          .filter((memory: any) => ['major', 'critical'].includes(memory.importance))
+          .slice(0, 5);
+        if (importantMemories.length > 0) {
+          advancedContext += `\n\n**캐릭터의 중요한 기억들:**\n${importantMemories.map((memory: any) => 
+            `- ${memory.title}: ${memory.description}`
+          ).join('\n')}`;
+        }
+      }
+
+      // NPC 관계
+      if (advancedSystems.npcRelationships?.length > 0) {
+        const significantRelationships = advancedSystems.npcRelationships
+          .filter((rel: any) => {
+            const emotions = rel.emotions || {};
+            return Object.values(emotions).some((value: any) => Math.abs(value) > 30);
+          })
+          .slice(0, 3);
+        if (significantRelationships.length > 0) {
+          advancedContext += `\n\n**주요 NPC 관계들:**\n${significantRelationships.map((rel: any) => {
+            const emotions = rel.emotions || {};
+            const strongEmotions = Object.entries(emotions)
+              .filter(([_, value]) => Math.abs(value as number) > 30)
+              .map(([emotion, value]) => `${emotion}: ${value}`)
+              .join(', ');
+            return `- ${rel.npcName}: ${strongEmotions}`;
+          }).join('\n')}`;
+        }
+      }
+
+      // 세력 평판
+      if (advancedSystems.factionReputations?.length > 0) {
+        const significantReputations = advancedSystems.factionReputations
+          .filter((rep: any) => Math.abs(rep.reputationLevel) > 50)
+          .slice(0, 3);
+        if (significantReputations.length > 0) {
+          advancedContext += `\n\n**세력 평판:**\n${significantReputations.map((rep: any) => 
+            `- ${rep.factionName}: ${rep.reputationLevel} (${rep.status})`
+          ).join('\n')}`;
+        }
+      }
+
+      // 활성 사이드 퀘스트
+      if (advancedSystems.activeSideQuests?.length > 0) {
+        const activeQuests = advancedSystems.activeSideQuests
+          .filter((quest: any) => quest.status === 'in_progress')
+          .slice(0, 3);
+        if (activeQuests.length > 0) {
+          advancedContext += `\n\n**진행 중인 사이드 퀘스트:**\n${activeQuests.map((quest: any) => 
+            `- ${quest.title}: ${quest.description}`
+          ).join('\n')}`;
+        }
+      }
+    }
+
+    return `${worldPrompt.systemPrompt}
+
+당신은 ${worldId} 세계관의 게임 마스터입니다.${worldContext}
 
 **캐릭터 정보:**
 - 이름: ${character.name}
@@ -172,7 +262,13 @@ export class ClaudeService {
 - health는 0 이하로 떨어질 수 없고, ${character.maxHealth}를 초과할 수 없습니다
 - mana는 0 이하로 떨어질 수 없고, ${character.maxMana}를 초과할 수 없습니다
 - 골드와 경험치는 0 이하로 떨어질 수 없습니다
-- 정확한 수치 계산을 위해 현재 값에서 변화량을 더하거나 빼서 새로운 값을 구하세요${historyContext}
+- 정확한 수치 계산을 위해 현재 값에서 변화량을 더하거나 빼서 새로운 값을 구하세요${historyContext}${advancedContext}
+
+**고급 시스템 활용 지침:**
+- 캐릭터의 기억, NPC 관계, 세력 평판, 사이드 퀘스트를 스토리에 적극 반영하세요
+- 기존 NPC들과의 만남 시 감정 관계를 고려한 반응을 만들어주세요
+- 평판이 높은 세력 지역에서는 우호적인 대우를, 낮은 곳에서는 적대적인 대우를 받게 해주세요
+- 진행 중인 사이드 퀘스트와 관련된 이벤트나 선택지를 제공해주세요
 
 다음 단계의 이야기를 생성해주세요.`;
   }
@@ -180,7 +276,10 @@ export class ClaudeService {
   async generateStory(request: StoryGenerationRequest, userId: string): Promise<StoryGenerationResponse> {
     // 공통 API 키 사용
     const anthropic = this.getAnthropicClient();
-    const systemPrompt = this.generateSystemPrompt(request.character, request.storyHistory);
+    
+    // worldId 추출 (기본값: classic_fantasy)
+    const worldId = request.gameContext?.worldId || 'classic_fantasy';
+    const systemPrompt = this.generateSystemPrompt(request.character, request.storyHistory, worldId, request.advancedSystems);
 
     let userMessage = `현재 ${request.currentStage + 1}단계입니다.`;
     
@@ -189,8 +288,11 @@ export class ClaudeService {
     }
 
     try {
+      const selectedModel = this.getModelForUser(userId);
+      console.log(`🤖 사용자 ${userId}에 대해 ${selectedModel} 모델 사용`);
+      
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: selectedModel,
         max_tokens: 1000,
         temperature: 0.8,
         system: systemPrompt,
@@ -235,11 +337,11 @@ export class ClaudeService {
 
   async testApiKey(apiKey?: string): Promise<boolean> {
     try {
-      // 공통 API 키 사용
+      // 공통 API 키 사용 - 테스트용으로 회원 모델 사용
       const anthropic = this.getAnthropicClient();
       
       await anthropic.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-3-5-haiku-20241022', // 테스트용 기본 모델
         max_tokens: 10,
         messages: [
           {

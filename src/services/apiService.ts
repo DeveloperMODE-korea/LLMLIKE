@@ -2,6 +2,8 @@
 console.log('🎯 apiService.ts 파일이 로드되었습니다!');
 console.log('🕐 현재 시간:', new Date().toLocaleString());
 
+import { authService } from './authService';
+
 // 임시로 하드코딩 - 환경변수 문제 해결을 위해
 const API_BASE_URL = 'http://localhost:3001/api/game';
 console.log('🔗 API_BASE_URL 설정됨:', API_BASE_URL);
@@ -20,9 +22,26 @@ class ApiService {
     const url = `${API_BASE_URL}${endpoint}`;
     console.log('🚀 API 요청:', url, options);
     
+    // 게스트 모드 확인
+    const isGuestMode = localStorage.getItem('guestMode') === 'true';
+    let headers: Record<string, string> = {};
+    
+    if (isGuestMode) {
+      // 게스트 모드에서는 특별한 헤더 사용
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Guest-Mode': 'true',
+      };
+    } else {
+      headers = {
+        'Content-Type': 'application/json',
+        ...authService.getAuthHeaders(), // 인증 헤더 자동 추가
+      };
+    }
+
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
+        ...headers,
         ...options.headers,
       },
       ...options,
@@ -79,14 +98,8 @@ class ApiService {
   async createCharacter(characterData: {
     name: string;
     job: string;
-    stats: {
-      health: number;
-      mana: number;
-      strength: number;
-      intelligence: number;
-      dexterity: number;
-      constitution: number;
-    };
+    stats: any;
+    worldId?: string;
   }): Promise<any> {
     return this.request('/character', {
       method: 'POST',
@@ -103,6 +116,11 @@ class ApiService {
   async generateStory(data: {
     characterId: string;
     userChoice?: string;
+    characterMemories?: any[];
+    npcRelationships?: any[];
+    factionReputations?: any[];
+    activeSideQuests?: any[];
+    gameContext?: any;
   }): Promise<any> {
     return this.request('/story/generate', {
       method: 'POST',

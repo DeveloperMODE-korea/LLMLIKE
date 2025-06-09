@@ -9,6 +9,132 @@ export const DIMENSIONAL_RIFT_WORLD: WorldSetting = {
 
 현재는 **균열의 시대**라 불리며, 용감한 모험가들이 이 불안정한 세계에서 살아남기 위해 끊임없이 싸우고 있습니다.`,
 
+  // 세계관별 고유 직업들
+  classes: [
+    {
+      id: 'warrior',
+      name: '⚔️ 전사',
+      subtitle: '강철의 의지를 가진 수호자',
+      description: '무기와 방어구의 달인인 전사는 전투에 특화된 강인한 전사입니다.',
+      detailedDescription: `전사는 최전선에서 동료들을 보호하며, 강력한 무기술로 적을 제압하는 근접 전투의 전문가입니다.
+
+**시작 장비:**
+- 강철 장검
+- 철제 방패
+- 사슬 갑옷
+- 치유 포션 3개
+
+**고유 스킬:**
+- 베기: 기본적인 검술 공격
+- 방어: 방패로 피해 감소
+- 분노: 공격력 일시 증가
+- 도전: 적의 어그로 집중`,
+      baseStats: {
+        health: 120,
+        mana: 30,
+        strength: 12,
+        intelligence: 6,
+        dexterity: 8,
+        constitution: 10
+      },
+      startingSkills: ['베기', '방어']
+    },
+    {
+      id: 'mage',
+      name: '🔮 마법사',
+      subtitle: '비전 마법의 탐구자',
+      description: '비전 마법을 다루는 마법사는 강력한 주문으로 적을 제압합니다.',
+      detailedDescription: `마법사는 오랜 연구를 통해 터득한 강력한 마법으로 전장을 지배하는 원거리 전투의 달인입니다.
+
+**시작 장비:**
+- 마법 지팡이
+- 마법서
+- 마법사 로브
+- 마나 포션 5개
+
+**고유 스킬:**
+- 화염구: 적에게 불덩이 발사
+- 얼음화살: 적을 둔화시키는 얼음 화살
+- 마법 보호막: 마법 피해 감소
+- 순간이동: 짧은 거리 이동`,
+      baseStats: {
+        health: 70,
+        mana: 120,
+        strength: 5,
+        intelligence: 14,
+        dexterity: 7,
+        constitution: 6
+      },
+      startingSkills: ['화염구', '얼음화살']
+    },
+    {
+      id: 'rogue',
+      name: '🗡️ 도적',
+      subtitle: '그림자 속의 암살자',
+      description: '은신과 정확성의 달인인 도적은 그림자에서 치명타를 가합니다.',
+      detailedDescription: `도적은 빠른 움직임과 치명적인 기습으로 적을 제압하는 민첩성 기반의 전투 전문가입니다.
+
+**시작 장비:**
+- 단검 두 자루
+- 가죽 갑옷
+- 도적 도구
+- 독 바른 화살 10개
+
+**고유 스킬:**
+- 기습: 그림자에서 치명타 공격
+- 회피: 적의 공격 피하기
+- 독 바르기: 무기에 독 효과 추가
+- 은신: 일시적으로 모습 감추기`,
+      baseStats: {
+        health: 90,
+        mana: 60,
+        strength: 8,
+        intelligence: 8,
+        dexterity: 14,
+        constitution: 7
+      },
+      startingSkills: ['기습', '회피']
+    },
+    {
+      id: 'cleric',
+      name: '✨ 성직자',
+      subtitle: '신성한 빛의 전달자',
+      description: '신성한 마법을 사용하는 성직자는 치유와 공격 마법을 모두 다룹니다.',
+      detailedDescription: `성직자는 신성한 힘을 빌려 동료를 치유하고 악을 정화하는 지원과 치유의 전문가입니다.
+
+**시작 장비:**
+- 성스러운 메이스
+- 성직자 로브
+- 성스러운 방패
+- 축복받은 물 5개
+
+**고유 스킬:**
+- 치유: 자신이나 동료의 체력 회복
+- 천벌: 신성한 힘으로 적 공격
+- 정화: 독이나 저주 효과 제거
+- 축복: 동료의 능력치 일시 증가`,
+      baseStats: {
+        health: 100,
+        mana: 90,
+        strength: 7,
+        intelligence: 10,
+        dexterity: 6,
+        constitution: 9
+      },
+      startingSkills: ['치유', '천벌']
+    }
+  ],
+
+  // 세계관별 능력치 시스템
+  statNames: {
+    health: '체력',
+    mana: '마나',
+    strength: '힘',
+    intelligence: '지능',
+    dexterity: '민첩',
+    constitution: '체질'
+  },
+
   regions: [
     {
       name: '새벽의 항구 (Dawn Harbor)',

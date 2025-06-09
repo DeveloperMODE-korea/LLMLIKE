@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Job, GameState } from '../types/game';
-import { JOB_DETAILS } from '../data/jobs';
+import { GameState } from '../types/game';
 import { createCharacter, generateNextStory } from '../utils/gameUtils';
 import { apiService } from '../services/apiService';
-import { Swords, Wand, Flame, Cross } from 'lucide-react';
+import { WorldManager } from '../data/worldSettings';
+import { WorldClass } from '../data/worldSettings/types';
+import { getAvatarByJobName } from '../data/avatars';
 
 interface CharacterCreationProps {
   onCharacterCreated: (gameState: GameState) => void;
@@ -11,20 +12,18 @@ interface CharacterCreationProps {
 
 const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreated }) => {
   const [name, setName] = useState('');
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedClass, setSelectedClass] = useState<WorldClass | null>(null);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [nameError, setNameError] = useState('');
 
-  const jobIcons = {
-    [Job.WARRIOR]: <Swords className="w-8 h-8 text-red-400" />,
-    [Job.MAGE]: <Wand className="w-8 h-8 text-blue-400" />,
-    [Job.ROGUE]: <Flame className="w-8 h-8 text-yellow-400" />,
-    [Job.CLERIC]: <Cross className="w-8 h-8 text-green-400" />
-  };
+  // 현재 세계관 정보 가져오기
+  const currentWorld = WorldManager.getCurrentWorld();
+  const availableClasses = currentWorld.classes;
+  const statNames = currentWorld.statNames;
 
-  const handleSelectJob = (job: Job) => {
-    setSelectedJob(job);
+  const handleSelectClass = (worldClass: WorldClass) => {
+    setSelectedClass(worldClass);
   };
 
   const handleNextStep = async () => {
@@ -35,39 +34,24 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
       }
       setNameError('');
       setStep(2);
-    } else if (step === 2 && selectedJob) {
+    } else if (step === 2 && selectedClass) {
       setIsLoading(true);
       
       try {
         // 백엔드에 캐릭터 생성 요청
         console.log('백엔드에 캐릭터 생성 요청 중...');
-        const jobDetails = JOB_DETAILS[selectedJob];
         
         const characterData = {
           name,
-          job: selectedJob,
-          stats: {
-            health: jobDetails.startingStats.health,
-            mana: jobDetails.startingStats.mana,
-            strength: jobDetails.startingStats.strength,
-            intelligence: jobDetails.startingStats.intelligence,
-            dexterity: jobDetails.startingStats.dexterity,
-            constitution: jobDetails.startingStats.constitution,
-          }
+          job: selectedClass.name,
+          worldId: currentWorld.id,
+          stats: selectedClass.baseStats
         };
 
         const backendResponse = await apiService.createCharacter(characterData);
         console.log('백엔드에서 캐릭터 생성 완료:', backendResponse);
-        console.log('📋 백엔드 응답 구조 세부사항:');
-        console.log('  - 응답에 success 속성이 있는가?:', 'success' in backendResponse);
-        console.log('  - 응답에 data 속성이 있는가?:', 'data' in backendResponse);
-        console.log('  - 응답에 character 속성이 있는가?:', 'character' in backendResponse);
-        console.log('  - 캐릭터 ID (direct):', backendResponse.character?.id);
-        console.log('  - 캐릭터 ID (data):', backendResponse.data?.character?.id);
-        console.log('  - 전체 백엔드 응답:', JSON.stringify(backendResponse, null, 2));
         
         // 백엔드에서 받은 캐릭터 데이터로 로컬 캐릭터 생성
-        // API 서비스에서 이미 data를 추출했으므로 직접 접근
         const backendCharacter = backendResponse.character;
         if (!backendCharacter || !backendCharacter.id) {
           throw new Error('백엔드에서 올바른 캐릭터 데이터를 받지 못했습니다.');
@@ -76,39 +60,30 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
         const character = {
           id: backendCharacter.id,
           name: backendCharacter.name,
-          job: backendCharacter.job,
-          level: backendCharacter.level,
-          health: backendCharacter.health,
-          maxHealth: backendCharacter.maxHealth,
-          mana: backendCharacter.mana,
-          maxMana: backendCharacter.maxMana,
-          strength: backendCharacter.strength,
-          intelligence: backendCharacter.intelligence,
-          dexterity: backendCharacter.dexterity,
-          constitution: backendCharacter.constitution,
+          job: selectedClass.name,
+          level: backendCharacter.level || 1,
+          health: backendCharacter.health || selectedClass.baseStats.health || selectedClass.baseStats.body || 100,
+          maxHealth: backendCharacter.maxHealth || selectedClass.baseStats.health || selectedClass.baseStats.body || 100,
+          mana: backendCharacter.mana || selectedClass.baseStats.mana || selectedClass.baseStats.neural || 50,
+          maxMana: backendCharacter.maxMana || selectedClass.baseStats.mana || selectedClass.baseStats.neural || 50,
+          strength: backendCharacter.strength || selectedClass.baseStats.strength || selectedClass.baseStats.body || 10,
+          intelligence: backendCharacter.intelligence || selectedClass.baseStats.intelligence || selectedClass.baseStats.technical || 10,
+          dexterity: backendCharacter.dexterity || selectedClass.baseStats.dexterity || selectedClass.baseStats.reflex || 10,
+          constitution: backendCharacter.constitution || selectedClass.baseStats.constitution || selectedClass.baseStats.cool || 10,
           inventory: backendCharacter.items || [],
-          gold: backendCharacter.gold,
-          experience: backendCharacter.experience,
-          skills: backendCharacter.skills || jobDetails.startingSkills,
+          gold: backendCharacter.gold || 100,
+          experience: backendCharacter.experience || 0,
+          skills: backendCharacter.skills || selectedClass.startingSkills,
         };
-        
-        console.log('🎭 로컬 캐릭터 생성 결과:');
-        console.log('  - 캐릭터 ID:', character.id);
-        console.log('  - 캐릭터 이름:', character.name);
-        console.log('  - ID 타입:', typeof character.id);
-        console.log('  - 전체 캐릭터:', JSON.stringify(character, null, 2));
         
         const initialGameState: GameState = {
           character,
           currentStage: 0,
           storyHistory: [],
           gameStatus: 'playing',
-          waitingForApi: true
+          waitingForApi: true,
+          worldId: currentWorld.id  // 선택된 세계관 ID 설정
         };
-        
-        console.log('🎮 게임 상태 생성 결과:');
-        console.log('  - gameState.character.id:', initialGameState.character.id);
-        console.log('  - ID가 존재하는가?', !!initialGameState.character.id);
         
         console.log('첫 번째 스토리 생성 요청 중...');
         const result = await generateNextStory(initialGameState);
@@ -136,8 +111,11 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
   };
 
   return (
-    <div className="bg-slate-800 border border-purple-700 rounded-lg p-6 shadow-lg max-w-3xl mx-auto animate-fadeIn">
+    <div className="bg-slate-800 border border-purple-700 rounded-lg p-6 shadow-lg max-w-4xl mx-auto animate-fadeIn">
       <h2 className="text-3xl text-center font-bold mb-6 text-purple-300">캐릭터 생성</h2>
+      <div className="text-center mb-4 text-gray-300">
+        🌍 <strong>{currentWorld.name}</strong> 세계관
+      </div>
       
       {step === 1 && (
         <div className="mb-6">
@@ -167,33 +145,74 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
       {step === 2 && (
         <div>
           <h3 className="text-xl text-yellow-400 mb-4">{name}님, 당신의 직업을 선택하세요</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {Object.values(Job).map((job) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {availableClasses.map((worldClass) => {
+              const avatarData = getAvatarByJobName(worldClass.name, currentWorld.id);
+              
+              return (
               <div
-                key={job}
+                  key={worldClass.id}
                 className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                  selectedJob === job
+                    selectedClass?.id === worldClass.id
                     ? 'bg-purple-900 border-purple-400'
                     : 'bg-slate-700 border-slate-600 hover:border-slate-500'
                 }`}
-                onClick={() => handleSelectJob(job)}
+                  onClick={() => handleSelectClass(worldClass)}
               >
                 <div className="flex items-center mb-2">
-                  {jobIcons[job]}
-                  <h4 className="text-lg font-bold ml-2">{job}</h4>
+                    {/* 아바타 미리보기 */}
+                    {avatarData && (
+                      <div 
+                        className="w-10 h-10 bg-gradient-to-br rounded-full flex items-center justify-center mr-3 border border-opacity-50"
+                        style={{ 
+                          background: `linear-gradient(to bottom right, ${avatarData.primaryColor}80, ${avatarData.secondaryColor}80)`,
+                          borderColor: avatarData.primaryColor 
+                        }}
+                      >
+                        <span 
+                          className="text-lg"
+                          style={{ color: avatarData.primaryColor }}
+                        >
+                          {avatarData.icon}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="text-lg font-bold">{worldClass.name}</h4>
+                      <p className="text-sm text-yellow-400">{worldClass.subtitle}</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-300 mb-3">{worldClass.description}</p>
+                  
+                  {/* 능력치 표시 */}
+                  <div className="grid grid-cols-2 gap-1 text-xs mb-3">
+                    {Object.entries(worldClass.baseStats).map(([statKey, value]) => (
+                      <div key={statKey} className="text-gray-300">
+                        {statNames[statKey] || statKey}: {value}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* 시작 스킬 표시 */}
+                  <div className="text-xs text-blue-300">
+                    <strong>시작 스킬:</strong> {worldClass.startingSkills.join(', ')}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-300 mb-3">{JOB_DETAILS[job].description}</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>체력: {JOB_DETAILS[job].startingStats.health}</div>
-                  <div>마나: {JOB_DETAILS[job].startingStats.mana}</div>
-                  <div>힘: {JOB_DETAILS[job].startingStats.strength}</div>
-                  <div>지능: {JOB_DETAILS[job].startingStats.intelligence}</div>
-                  <div>민첩: {JOB_DETAILS[job].startingStats.dexterity}</div>
-                  <div>체질: {JOB_DETAILS[job].startingStats.constitution}</div>
+              );
+            })}
                 </div>
+          
+          {/* 선택된 직업의 상세 정보 */}
+          {selectedClass && (
+            <div className="bg-slate-900 border border-slate-600 rounded-lg p-4 mb-4">
+              <h4 className="text-lg font-bold text-purple-300 mb-2">{selectedClass.name} - 상세 정보</h4>
+              <div className="text-sm text-gray-300 whitespace-pre-line">
+                {selectedClass.detailedDescription}
               </div>
-            ))}
           </div>
+          )}
+          
           <div className="flex space-x-4">
             <button
               onClick={handleBackStep}
@@ -203,9 +222,9 @@ const CharacterCreation: React.FC<CharacterCreationProps> = ({ onCharacterCreate
             </button>
             <button
               onClick={handleNextStep}
-              disabled={!selectedJob || isLoading}
+              disabled={!selectedClass || isLoading}
               className={`${
-                !selectedJob || isLoading
+                !selectedClass || isLoading
                   ? 'bg-gray-500 cursor-not-allowed'
                   : 'bg-purple-700 hover:bg-purple-600'
               } text-white py-2 px-6 rounded-lg font-semibold transition-all duration-200 w-1/2`}

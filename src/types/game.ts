@@ -74,7 +74,7 @@ export interface StoryEvent {
   stageNumber: number;
   content: string;
   choices: Choice[];
-  type: '이야기' | '전투' | '보물' | '상점' | '휴식';
+  type: '이야기' | '전투' | '보물' | '상점' | '휴식' | 'guestLimit';
   enemyId?: string;
   result?: string;
   selectedChoice?: number;

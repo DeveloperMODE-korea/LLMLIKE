@@ -30,12 +30,33 @@ export interface GameSystem {
   mechanics: string[];
 }
 
+export interface WorldClass {
+  id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  detailedDescription: string;
+  baseStats: {
+    [key: string]: number; // 세계관별로 다른 능력치 사용 가능
+  };
+  startingSkills: string[];
+  icon?: string;
+}
+
 export interface WorldSetting {
   id: string;
   name: string;
   description: string;
   genre: string;
   backgroundStory: string;
+  
+  // 세계관별 고유 직업들
+  classes: WorldClass[];
+  
+  // 세계관별 능력치 시스템
+  statNames: {
+    [key: string]: string; // 예: { health: '체력', mana: '마나' } 또는 { neural: '뉴럴', chrome: '크롬' }
+  };
   
   // 지역들
   regions: WorldRegion[];
@@ -75,4 +96,4 @@ export interface WorldSetting {
   }[];
 }
 
-export type WorldSettingId = 'dimensional_rift' | 'cyberpunk_2187' | 'steampunk_empire' | 'space_odyssey'; 
+export type WorldSettingId = 'dimensional_rift' | 'cyberpunk_2187' | 'dark_finance' | 'classic_fantasy' | 'steampunk_empire' | 'space_odyssey'; 
