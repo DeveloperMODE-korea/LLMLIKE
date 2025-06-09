@@ -75,3 +75,10 @@ services:
 volumes:
   postgres_data:
   ssl_certs: 
+
+networks:
+  llmlike-network:
+    driver: bridge
+
+volumes:
+  server-data: 
