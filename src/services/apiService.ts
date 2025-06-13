@@ -4,8 +4,10 @@ console.log('🕐 현재 시간:', new Date().toLocaleString());
 
 import { authService } from './authService';
 
-// 임시로 하드코딩 - 환경변수 문제 해결을 위해
-const API_BASE_URL = 'http://localhost:3001/api/game';
+// 환경변수 기반 API URL 설정
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/game`
+  : 'http://localhost:3001/api/game';
 console.log('🔗 API_BASE_URL 설정됨:', API_BASE_URL);
 
 interface ApiResponse<T> {
@@ -143,6 +145,25 @@ class ApiService {
   async healthCheck(): Promise<any> {
     const response = await fetch(`${API_BASE_URL.replace('/api/game', '')}/health`);
     return response.json();
+  }
+
+  // 새로운 게임 상태 관리 메서드들
+  async saveGameState(data: {
+    characterId: string;
+    gameState: any;
+  }): Promise<any> {
+    return this.request('/gamestate/save', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async loadGameState(characterId: string): Promise<any> {
+    return this.request(`/gamestate/load/${characterId}`);
+  }
+
+  async getUserCharacters(): Promise<any> {
+    return this.request('/characters');
   }
 }
 

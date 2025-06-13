@@ -99,6 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token) {
         try {
           const user = await authService.getProfile();
+          
+          // 기존 로그인된 사용자라면 게스트 모드 플래그 제거
+          localStorage.removeItem('guestMode');
+          console.log('🔄 기존 로그인 토큰 검증 성공! 게스트 모드 플래그 제거됨');
+          
           dispatch({ 
             type: 'LOGIN_SUCCESS', 
             payload: { user, token } 
@@ -125,6 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'LOGIN_START' });
     try {
       const result = await authService.login(data);
+      
+      // 로그인 성공 시 게스트 모드 플래그 제거
+      localStorage.removeItem('guestMode');
+      console.log('🎉 로그인 성공! 게스트 모드 플래그 제거됨');
+      
       dispatch({ 
         type: 'LOGIN_SUCCESS', 
         payload: { user: result.user, token: result.token } 
@@ -141,6 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'LOGIN_START' });
     try {
       const result = await authService.register(data);
+      
+      // 회원가입 성공 시 게스트 모드 플래그 제거
+      localStorage.removeItem('guestMode');
+      console.log('🎉 회원가입 성공! 게스트 모드 플래그 제거됨');
+      
       dispatch({ 
         type: 'LOGIN_SUCCESS', 
         payload: { user: result.user, token: result.token } 

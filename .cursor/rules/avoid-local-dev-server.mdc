@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Prevent the AI from running local dev servers; use docker-compose instead
+alwaysApply: true
+---
+
+# DO NOT run local dev servers
+
+- Never execute `npm run dev`, `npm run start`, `node server.js`, or any similar command.
+- Assume the backend and frontend are **already running inside Docker containers** started via `docker-compose up -d`.
+- If a code change requires a restart, respond with:
+  > “Dockerized services will auto-reload via volume mounts; no manual restart needed.”
+- Use `docker compose logs -f <service>` to inspect runtime output when necessary.
+- **Never** issue `docker compose down`, `docker compose restart`, or container-killing commands without explicit user confirmation.
+

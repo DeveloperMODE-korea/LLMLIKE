@@ -4,6 +4,7 @@ import { JOB_DETAILS } from '../data/jobs';
 // 더 이상 mockStories 사용하지 않음 - 세계관별 fallback 사용
 import { apiService } from '../services/apiService';
 import { advancedSystemsService } from '../services/advancedSystemsService';
+import { authService } from '../services/authService';
 
 // 세계관별 fallback 스토리를 위한 간단한 구조체
 interface WorldFallbackStory {
@@ -39,6 +40,25 @@ const WORLD_FALLBACK_STORIES: Record<string, WorldFallbackStory> = {
       { id: 4, text: "주변의 소리에 귀를 기울인다" }
     ]
   }
+};
+
+// 실시간 게스트 모드 확인 함수
+const isGuestMode = (): boolean => {
+  // localStorage의 guestMode 플래그와 실제 인증 토큰 상태를 모두 확인
+  const guestFlag = localStorage.getItem('guestMode') === 'true';
+  const hasToken = !!authService.getToken();
+  
+  // 토큰이 있으면 로그인 상태이므로 게스트 모드가 아님
+  if (hasToken) {
+    // 토큰이 있는데 게스트 플래그가 남아있다면 제거
+    if (guestFlag) {
+      localStorage.removeItem('guestMode');
+      console.log('🧹 토큰 발견! 남아있던 게스트 모드 플래그 제거됨');
+    }
+    return false;
+  }
+  
+  return guestFlag;
 };
 
 export const createCharacter = (name: string, job: Job): Character => {
@@ -190,8 +210,7 @@ export const processChoice = async (
   choiceId: number
 ): Promise<GameState> => {
   // 게스트 모드 스테이지 제한 확인
-  const isGuestMode = localStorage.getItem('guestMode') === 'true';
-  if (isGuestMode && gameState.currentStage >= 10) {
+  if (isGuestMode() && gameState.currentStage >= 10) {
     // 10스테이지 제한 도달 - 특별한 이벤트 반환
     const limitReachedEvent: StoryEvent = {
       id: 'guest-limit-reached',
@@ -331,41 +350,93 @@ export const processCombatAction = (
   };
 };
 
-export const saveGameState = (gameState: GameState): void => {
+export const saveGameState = async (gameState: GameState): Promise<void> => {
   // 게스트 모드에서는 저장하지 않음
-  const isGuestMode = localStorage.getItem('guestMode') === 'true';
-  if (isGuestMode) {
+  if (isGuestMode()) {
     console.log('🚫 게스트 모드에서는 게임이 저장되지 않습니다.');
     return;
   }
 
-  localStorage.setItem('llmlike-gamestate', JSON.stringify(gameState));
-  console.log('🎮 게임 저장됨:', {
-    character: gameState.character.name,
-    level: gameState.character.level,
-    stage: gameState.currentStage,
-    worldId: gameState.worldId
-  });
+  try {
+    // 데이터베이스에 저장
+    await apiService.saveGameState({
+      characterId: gameState.character.id,
+      gameState: {
+        currentStage: gameState.currentStage,
+        gameStatus: 'playing',
+        waitingForApi: gameState.waitingForApi,
+        worldId: gameState.worldId || 'dimensional_rift'
+      }
+    });
+
+    console.log('🎮 게임 저장됨 (데이터베이스):', {
+      character: gameState.character.name,
+      level: gameState.character.level,
+      stage: gameState.currentStage,
+      worldId: gameState.worldId
+    });
+  } catch (error) {
+    console.error('❌ 게임 저장 실패:', error);
+    
+    // 실패 시 localStorage로 폴백
+    console.log('📁 로컬 저장소로 폴백합니다...');
+    localStorage.setItem('llmlike-gamestate', JSON.stringify(gameState));
+  }
 };
 
-export const loadGameState = (): GameState | null => {
+export const loadGameState = async (characterId?: string): Promise<GameState | null> => {
   // 게스트 모드에서는 로드하지 않음
-  const isGuestMode = localStorage.getItem('guestMode') === 'true';
-  if (isGuestMode) {
+  if (isGuestMode()) {
     console.log('🚫 게스트 모드에서는 게임이 로드되지 않습니다.');
     return null;
   }
 
-  const saved = localStorage.getItem('llmlike-gamestate');
-  if (saved) {
-    const gameState = JSON.parse(saved);
-    console.log('🎮 게임 로드됨:', {
-      character: gameState.character?.name,
-      level: gameState.character?.level,
-      stage: gameState.currentStage,
-      worldId: gameState.worldId
-    });
-    return gameState;
+  if (!characterId) {
+    // characterId가 없으면 localStorage에서 시도
+    const saved = localStorage.getItem('llmlike-gamestate');
+    if (saved) {
+      const gameState = JSON.parse(saved);
+      console.log('🎮 게임 로드됨 (로컬):', {
+        character: gameState.character?.name,
+        level: gameState.character?.level,
+        stage: gameState.currentStage,
+        worldId: gameState.worldId
+      });
+      return gameState;
+    }
+    return null;
   }
+
+  try {
+    // 데이터베이스에서 로드
+    const gameState = await apiService.loadGameState(characterId);
+    
+    if (gameState) {
+      console.log('🎮 게임 로드됨 (데이터베이스):', {
+        character: gameState.character?.name,
+        level: gameState.character?.level,
+        stage: gameState.currentStage,
+        worldId: gameState.worldId
+      });
+      return gameState;
+    }
+  } catch (error) {
+    console.error('❌ 게임 로드 실패:', error);
+    
+    // 실패 시 localStorage에서 폴백
+    console.log('📁 로컬 저장소에서 폴백 시도...');
+    const saved = localStorage.getItem('llmlike-gamestate');
+    if (saved) {
+      const gameState = JSON.parse(saved);
+      console.log('🎮 게임 로드됨 (로컬 폴백):', {
+        character: gameState.character?.name,
+        level: gameState.character?.level,
+        stage: gameState.currentStage,
+        worldId: gameState.worldId
+      });
+      return gameState;
+    }
+  }
+  
   return null;
 };

@@ -10,6 +10,7 @@ interface StoryGenerationRequest {
   currentStage: number;
   storyHistory: StoryEvent[];
   userChoice?: string;
+  worldId?: string;
   advancedSystems?: {
     characterMemories: any[];
     npcRelationships: any[];
@@ -277,8 +278,9 @@ ${worldPrompt.storyGuidelines}`;
     // 공통 API 키 사용
     const anthropic = this.getAnthropicClient();
     
-    // worldId 추출 (기본값: classic_fantasy)
-    const worldId = request.gameContext?.worldId || 'classic_fantasy';
+    // worldId 우선순위: request.worldId > gameContext.worldId > 기본값
+    const worldId = request.worldId || request.gameContext?.worldId || 'classic_fantasy';
+    console.log('🌍 Claude 서비스에서 사용할 세계관:', worldId);
     const systemPrompt = this.generateSystemPrompt(request.character, request.storyHistory, worldId, request.advancedSystems);
 
     let userMessage = `현재 ${request.currentStage + 1}단계입니다.`;
@@ -309,14 +311,72 @@ ${worldPrompt.storyGuidelines}`;
         throw new Error('Claude API로부터 예상치 못한 응답 형식을 받았습니다.');
       }
 
-      // JSON 파싱
-      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      // JSON 파싱 개선
+      let cleanedText = content.text.trim();
+      
+      // Claude가 마크다운 코드 블록으로 감쌌을 수 있으므로 제거
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // JSON 패턴 추출 개선
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('Claude 응답 전체 텍스트:', content.text);
         throw new Error('Claude API 응답에서 JSON을 찾을 수 없습니다.');
       }
-
-      const parsedResponse: StoryGenerationResponse = JSON.parse(jsonMatch[0]);
       
+      let jsonText = jsonMatch[0];
+      
+      // 일반적인 JSON 정제 작업
+      jsonText = jsonText
+        .replace(/[\r\n\t]/g, ' ')  // 줄바꿈과 탭을 공백으로 변경
+        .replace(/\s+/g, ' ')       // 연속된 공백을 하나로 합침
+        .replace(/,\s*([}\]])/g, '$1') // 마지막 쉼표 제거
+        .trim();
+      
+      console.log('🔧 정제된 JSON 텍스트:', jsonText.substring(0, 200) + '...');
+      
+      let parsedResponse: StoryGenerationResponse;
+      
+      try {
+        parsedResponse = JSON.parse(jsonText);
+      } catch (jsonError) {
+        console.error('JSON 파싱 실패:', jsonError);
+        console.error('파싱 시도한 텍스트:', jsonText);
+        
+        // JSON 파싱 실패 시 fallback 응답 생성
+        console.log('🚨 JSON 파싱 실패로 fallback 응답 생성');
+        const worldId = request.worldId || 'dimensional_rift';
+        
+        const fallbackResponses = {
+          'dimensional_rift': {
+            content: '차원의 균열 앞에서 당신은 강력한 마법 에너지를 느낍니다. 균열이 점점 더 넓어지고 있으며, 그 너머에서 무언가가 움직이는 것이 보입니다.',
+            choices: [
+              { id: 1, text: '차원의 균열 속으로 들어간다' },
+              { id: 2, text: '차원 마법으로 균열을 조사한다' },
+              { id: 3, text: '균열을 봉인하려고 시도한다' },
+              { id: 4, text: '안전한 거리를 유지한다' }
+            ],
+            type: '이야기' as const
+          },
+          'cyberpunk_2187': {
+            content: '네온 불빛이 번쩍이는 거리에서 당신은 수상한 신호를 감지합니다. 사이버웨어가 주변의 디지털 활동을 감지하고 있으며, 누군가가 당신을 감시하고 있는 것 같습니다.',
+            choices: [
+              { id: 1, text: '해킹으로 신호를 역추적한다' },
+              { id: 2, text: '은밀하게 신호 발신지로 이동한다' },
+              { id: 3, text: '사이버웨어로 주변을 스캔한다' },
+              { id: 4, text: '다른 경로로 피한다' }
+            ],
+            type: '이야기' as const
+          }
+        };
+        
+        parsedResponse = (fallbackResponses as any)[worldId] || fallbackResponses['dimensional_rift'];
+      }
+
       // 유효성 검사
       if (!parsedResponse.content || !parsedResponse.choices || !parsedResponse.type) {
         throw new Error('Claude API 응답 형식이 올바르지 않습니다.');

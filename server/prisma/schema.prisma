@@ -97,6 +97,7 @@ model GameState {
   currentStage  Int    @default(0)
   gameStatus    String // 'menu' | 'creating' | 'playing' | 'paused' | 'ended'
   waitingForApi Boolean @default(false)
+  worldId       String @default("dimensional_rift") // 세계관 ID 추가
   
   // Relations
   userId      String

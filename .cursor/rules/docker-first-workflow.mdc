@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Enforce docker-centric development workflow
+alwaysApply: true
+---
+
+# Docker-First Development Workflow
+
+- All services (web, db, redis, worker) must be built and run via **docker compose**.
+- When adding new dependencies:
+  1. Update `package.json` **and** the relevant `Dockerfile`.
+  2. Run `docker compose build <service>`; do **not** run `npm install` locally.
+- When writing README snippets or test scripts, prefix commands with `docker compose exec <service>`.
+- Do not modify `docker-compose.yml` or any `Dockerfile` unless the user explicitly asks for it.
+- Never mount the host’s `node_modules` into containers; rely on images’ own installs.
+
