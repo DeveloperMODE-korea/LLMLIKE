@@ -459,7 +459,7 @@ docker compose exec backend npx prisma migrate deploy
 
 ## 📈 버전 히스토리
 
-- **v1.2.0** (2025.06.14): 마이크로서비스 아키텍처 및 테스트 인프라 완성
+- **v1.1.3** (2025.06.14): 마이크로서비스 아키텍처 및 테스트 인프라 완성
   - GameScreen.tsx 마이크로서비스 아키텍처 완료 (84% 코드 감소)
   - 4개 커스텀 훅 구현: useGameLogic, useGameTimer, useGuestMode, useAutoSave
   - 완전한 테스트 인프라 구축: Vitest + React Testing Library
